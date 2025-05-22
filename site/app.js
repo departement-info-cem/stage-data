@@ -1,5 +1,6 @@
 class DataVisualizationApp {
     constructor() {
+        this.repondants = 0;
         this.currentYear = 2025;
         this.charts = new Map();
         this.chartConfigs = [
@@ -96,6 +97,7 @@ class DataVisualizationApp {
 
                 if (info && info.repondants) {
                     html += `<p><strong>Répondants :</strong> ${info.repondants}</p>`;
+                    this.repondants = info.repondants;
                 } else {
                     html = `<p>Aucune donnée générale trouvée pour ${annee}.</p>`;
                 }
