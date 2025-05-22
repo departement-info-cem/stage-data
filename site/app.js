@@ -85,29 +85,32 @@ class DataVisualizationApp {
         });
     }
 
-    loadGeneralInfo(annee) {
+    async loadGeneralInfo(annee) {
         const infoPath = `static/data/${annee}/info.csv`;
 
-        Papa.parse(infoPath, {
-            download: true,
-            header: true,
-            complete: function (results) {
-                const info = results.data[0]; // première ligne
-                let html = "";
+        return new Promise((resolve, reject) => {
+            Papa.parse(infoPath, {
+                download: true,
+                header: true,
+                complete: (results) => {
+                    const info = results.data[0]; // première ligne
+                    let html = "";
 
-                if (info && info.repondants) {
-                    html += `<p><strong>Répondants :</strong> ${info.repondants}</p>`;
-                    this.repondants = info.repondants;
-                } else {
-                    html = `<p>Aucune donnée générale trouvée pour ${annee}.</p>`;
+                    if (info && info.repondants) {
+                        html += `<p><strong>Répondants :</strong> ${info.repondants}</p>`;
+                        this.repondants = info.repondants;
+                    } else {
+                        html = `<p>Aucune donnée générale trouvée pour ${annee}.</p>`;
+                    }
+
+                    document.getElementById("general-info").innerHTML = html;
+                    resolve();
+                },
+                error: function (error) {
+                    console.error("Erreur lors du chargement de info.csv :", error);
+                    document.getElementById("general-info").innerHTML = `<p>Erreur de chargement des données générales.</p>`;
                 }
-
-                document.getElementById("general-info").innerHTML = html;
-            },
-            error: function (error) {
-                console.error("Erreur lors du chargement de info.csv :", error);
-                document.getElementById("general-info").innerHTML = `<p>Erreur de chargement des données générales.</p>`;
-            }
+            })
         });
     }
 
@@ -129,8 +132,8 @@ class DataVisualizationApp {
         container.innerHTML = '<div class="loading">Chargement des données...</div>';
 
         try {
+            await this.loadGeneralInfo(year); // Charger les infos générales pour l'année sélectionnée
             await this.createCharts(year);
-            this.loadGeneralInfo(year); // Charger les infos générales pour l'année sélectionnée
         } catch (error) {
             container.innerHTML = `<div class="error">Erreur lors du chargement des données: ${error.message}</div>`;
         }
@@ -276,8 +279,11 @@ class DataVisualizationApp {
         const labels = sortedData.map(item => item[labelKey]);
         const values = sortedData.map(item => parseFloat(item[valueKey]) || 0);
 
+        const totalRespondents = this.repondants;
+
         const chart = new Chart(ctx, {
             type: 'bar',
+            plugins: [ChartDataLabels],
             data: {
                 labels: labels,
                 datasets: [{
@@ -315,7 +321,18 @@ class DataVisualizationApp {
                         borderColor: '#3498db',
                         borderWidth: 1,
                         cornerRadius: 8
-                    }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'right',
+                        color: '#2c3e50',
+                        formatter: (value, context) => {
+                            const total = totalRespondents;
+                            if (!total || total === 0) return '';
+                            const percent = ((value / total) * 100).toFixed(1);
+                            return `${percent}%`;
+                        }
+                    },
                 },
                 scales: {
                     y: {
@@ -363,7 +380,11 @@ class DataVisualizationApp {
         // Trier les données par ordre décroissant
         const sortedData = [...data].sort((a, b) => b[valueKey] - a[valueKey]);
 
-        const labels = sortedData.map(item => item[labelKey]);
+        const totalRespondents = this.repondants;
+        const labels = sortedData.map(item => {
+            const percent = ((item[valueKey] / totalRespondents) * 100).toFixed(1);
+            return `${item[labelKey]} (${percent}%)`;
+        });
         const values = sortedData.map(item => parseFloat(item[valueKey]) || 0);
 
         const chart = new Chart(ctx, {
