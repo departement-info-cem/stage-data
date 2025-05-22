@@ -273,6 +273,7 @@ class DataVisualizationApp {
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
