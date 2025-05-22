@@ -84,6 +84,31 @@ class DataVisualizationApp {
         });
     }
 
+    loadGeneralInfo(annee) {
+        const infoPath = `static/data/${annee}/info.csv`;
+
+        Papa.parse(infoPath, {
+            download: true,
+            header: true,
+            complete: function (results) {
+                const info = results.data[0]; // première ligne
+                let html = "";
+
+                if (info && info.repondants) {
+                    html += `<p><strong>Répondants :</strong> ${info.repondants}</p>`;
+                } else {
+                    html = `<p>Aucune donnée générale trouvée pour ${annee}.</p>`;
+                }
+
+                document.getElementById("general-info").innerHTML = html;
+            },
+            error: function (error) {
+                console.error("Erreur lors du chargement de info.csv :", error);
+                document.getElementById("general-info").innerHTML = `<p>Erreur de chargement des données générales.</p>`;
+            }
+        });
+    }
+
     switchYear(year) {
         this.currentYear = year;
 
@@ -103,6 +128,7 @@ class DataVisualizationApp {
 
         try {
             await this.createCharts(year);
+            this.loadGeneralInfo(year); // Charger les infos générales pour l'année sélectionnée
         } catch (error) {
             container.innerHTML = `<div class="error">Erreur lors du chargement des données: ${error.message}</div>`;
         }
@@ -296,7 +322,8 @@ class DataVisualizationApp {
                             color: 'rgba(0,0,0,0.1)'
                         },
                         ticks: {
-                            color: '#7f8c8d'
+                            color: '#7f8c8d',
+                            autoSkip: false,
                         }
                     },
                     x: {
@@ -305,7 +332,10 @@ class DataVisualizationApp {
                         },
                         ticks: {
                             color: '#7f8c8d',
-                            maxRotation: 45
+                        },
+                        afterDataLimits: (axis) => {
+                            const max = axis.max;
+                            axis.max = max * 1.005;
                         }
                     }
                 },
