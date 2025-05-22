@@ -195,9 +195,9 @@ class DataVisualizationApp {
         const processedData = Array.from(counts.entries())
             .map(([item, count]) => ({
                 [questionTitle]: item,
-                'Fréquence': count
+                'Étudiants': count
             }))
-            .sort((a, b) => b['Fréquence'] - a['Fréquence']);
+            .sort((a, b) => b['Étudiants'] - a['Étudiants']);
 
         return processedData;
     }
@@ -300,7 +300,7 @@ class DataVisualizationApp {
                     },
                     x: {
                         grid: {
-                            display: false
+                            display: true
                         },
                         ticks: {
                             color: '#7f8c8d',
