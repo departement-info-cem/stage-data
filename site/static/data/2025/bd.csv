@@ -33,3 +33,6 @@ MariaDB,
 MySQL,MongoDB,Postgres,Microsoft SQL Server,
 Microsoft SQL Server,
 Oracle,
+Microsoft SQL Server,Oracle
+MySQL
+MySQL,Microsoft SQL Server
