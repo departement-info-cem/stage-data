@@ -144,7 +144,7 @@ class DataVisualizationApp {
             const sentinel = document.createElement('div');
             sentinel.className = 'header-sentinel';
             sentinel.setAttribute('aria-hidden', 'true');
-            document.body.appendChild(sentinel);
+            header.insertAdjacentElement('afterend', sentinel);
 
             const headerObserver = new IntersectionObserver(([entry]) => {
                 header.classList.toggle('is-compact', !entry.isIntersecting);
