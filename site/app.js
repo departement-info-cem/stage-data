@@ -129,5 +129,7 @@ class DataVisualizationApp {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const yearEl = document.getElementById('footer-year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
     window.app = new DataVisualizationApp();
 });

@@ -298,6 +298,50 @@ h1 {
     margin: 20px 0;
 }
 
+.site-footer {
+    margin-top: 40px;
+    padding: 24px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: #7f8c8d;
+    font-size: 0.9em;
+    border-top: 1px solid #e0e6e8;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.footer-link:hover {
+    background: #ecf0f1;
+    color: #3498db;
+}
+
+.footer-link:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+.footer-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+.footer-credit {
+    text-align: right;
+}
+
 @media (max-width: 768px) {
     .charts-container {
         grid-template-columns: 1fr;
