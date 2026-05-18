@@ -8,6 +8,8 @@ const TOOLTIP_BASE = {
     borderColor: '#3498db',
     borderWidth: 1,
     cornerRadius: 8,
+    titleFont: { size: 16 },
+    bodyFont: { size: 16 },
 };
 
 const ANIMATION = { duration: 800, easing: 'easeOutQuart' };
@@ -70,6 +72,7 @@ export function createBarChart(canvasId, data, repondants, schemaColors) {
                     anchor: 'end',
                     align: 'right',
                     color: '#2c3e50',
+                    font: { size: 16 },
                     formatter: (v) => repondants ? `${((v / repondants) * 100).toFixed(1)} %` : '',
                 },
             },
@@ -77,11 +80,11 @@ export function createBarChart(canvasId, data, repondants, schemaColors) {
                 y: {
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,0.1)' },
-                    ticks: { color: '#7f8c8d', autoSkip: false },
+                    ticks: { color: '#7f8c8d', autoSkip: false, font: { size: 16 } },
                 },
                 x: {
                     grid: { display: true },
-                    ticks: { color: '#7f8c8d' },
+                    ticks: { color: '#7f8c8d', font: { size: 16 } },
                     afterDataLimits: (axis) => { axis.max = axis.max * 1.05; },
                 },
             },
@@ -110,7 +113,7 @@ export function createPieChart(canvasId, data, repondants, schemaColors) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { padding: 20, usePointStyle: true, color: '#2c3e50' },
+                    labels: { padding: 20, usePointStyle: true, color: '#2c3e50', font: { size: 16 } },
                 },
                 tooltip: TOOLTIP_BASE,
             },
@@ -136,7 +139,7 @@ export function createLineChart(canvasId, years, datasets, options = {}) {
                 legend: {
                     display: showLegend,
                     position: 'bottom',
-                    labels: { padding: 15, usePointStyle: true, color: '#2c3e50' },
+                    labels: { padding: 15, usePointStyle: true, color: '#2c3e50', font: { size: 16 } },
                 },
                 tooltip: {
                     backgroundColor: 'rgba(0,0,0,0.8)',
@@ -149,11 +152,11 @@ export function createLineChart(canvasId, years, datasets, options = {}) {
                 y: {
                     beginAtZero: true,
                     title: { display: true, text: yLabel },
-                    ticks: { color: '#7f8c8d', callback: yFormatter },
+                    ticks: { color: '#7f8c8d', callback: yFormatter, font: { size: 16 } },
                 },
                 x: {
                     title: { display: true, text: 'Année' },
-                    ticks: { color: '#7f8c8d' },
+                    ticks: { color: '#7f8c8d', font: { size: 16 } },
                 },
             },
             animation: ANIMATION,
