@@ -3,6 +3,7 @@ import { loadAllData, loadManifests, loadSchema, loadYears } from './js/data-loa
 import { handleExport } from './js/export.js';
 import { renderProgramSelector, renderSelectors } from './js/selectors.js';
 import { ensureValidProgram } from './js/state-queries.js';
+import { applyUrlStateToApp, writeUrlState } from './js/url-state.js';
 import { renderCompareView, renderYearView } from './js/views.js';
 
 class DataVisualizationApp {
@@ -44,10 +45,13 @@ class DataVisualizationApp {
             this.state.rawRows = rawRows;
 
             this.state.currentYear = this.state.years[this.state.years.length - 1];
+            applyUrlStateToApp(this.state);
             ensureValidProgram(this.state);
+            writeUrlState(this.state);
             renderSelectors(this.state);
             this.setupEventListeners();
             this.render();
+            this.scrollToHash();
         } catch (err) {
             console.error("Erreur d'initialisation :", err);
             container.innerHTML = `<div class="error"><h3>Erreur d'initialisation</h3><p>${err.message}</p></div>`;
@@ -65,6 +69,7 @@ class DataVisualizationApp {
                 this.state.currentYear = btn.dataset.year;
             }
             ensureValidProgram(this.state);
+            writeUrlState(this.state);
             renderSelectors(this.state);
             this.render();
         });
@@ -75,16 +80,36 @@ class DataVisualizationApp {
                 const btn = e.target.closest('.program-btn');
                 if (!btn) return;
                 this.state.currentProgram = btn.dataset.program;
+                writeUrlState(this.state);
                 renderProgramSelector(this.state);
                 this.render();
             });
         }
 
         document.getElementById('chartsContainer').addEventListener('click', (e) => {
-            const btn = e.target.closest('.export-btn');
-            if (!btn) return;
-            handleExport(this.state, btn.dataset.action, btn.dataset.qid);
+            const exportBtn = e.target.closest('.export-btn');
+            if (exportBtn) {
+                handleExport(this.state, exportBtn.dataset.action, exportBtn.dataset.qid);
+                return;
+            }
+            const anchor = e.target.closest('.chart-title-link');
+            if (anchor) {
+                e.preventDefault();
+                const id = anchor.getAttribute('href').slice(1);
+                if (id) {
+                    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${id}`);
+                    const target = document.getElementById(id);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
         });
+    }
+
+    scrollToHash() {
+        const hash = window.location.hash.slice(1);
+        if (!hash) return;
+        const target = document.getElementById(hash);
+        if (target) target.scrollIntoView({ block: 'start' });
     }
 
     render() {

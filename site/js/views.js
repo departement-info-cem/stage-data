@@ -19,9 +19,15 @@ import { escapeHTML } from './utils.js';
 function createWrapper(qid, label) {
     const wrapper = document.createElement('section');
     wrapper.className = 'chart-wrapper';
+    wrapper.id = `q-${qid}`;
     wrapper.innerHTML = `
         <header class="chart-header">
-            <h2 class="chart-title">${escapeHTML(label)}</h2>
+            <h2 class="chart-title">
+                <a class="chart-title-link" href="#q-${qid}">
+                    <span class="chart-title-text">${escapeHTML(label)}</span>
+                    <i data-lucide="link" class="chart-title-icon" aria-hidden="true"></i>
+                </a>
+            </h2>
             <div class="chart-actions">
                 <button type="button" class="export-btn" data-action="csv" data-qid="${qid}" title="Télécharger en CSV" aria-label="Télécharger les données en CSV">
                     <i data-lucide="file-text" aria-hidden="true"></i>
