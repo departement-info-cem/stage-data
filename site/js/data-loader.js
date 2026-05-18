@@ -1,5 +1,6 @@
 import { fetchJSON } from './utils.js';
 import { aggregateAverage, aggregateMultiChoice, aggregateSankey } from './aggregator.js';
+import { manifestQuestionIds } from './state-queries.js';
 
 export async function loadSchema() {
     const [questions, aliases, colors, programs] = await Promise.all([
@@ -47,7 +48,7 @@ export async function loadAllData({ years, manifests, schema, aliasLookup }) {
     for (const year of years) {
         data[year] = {};
         rawRows[year] = {};
-        for (const qid of manifests[year].questions) {
+        for (const qid of manifestQuestionIds(manifests[year])) {
             try {
                 data[year][qid] = await loadQuestionCSV({
                     year,

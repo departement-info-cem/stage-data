@@ -8,14 +8,22 @@ import {
     createSankeyChart,
 } from './charts.js';
 import {
-    allCompareQuestions,
     compareYearsForQuestion,
     getData,
     getRepondants,
+    manifestSections,
+    mergedSections,
     programColor,
     programLabel,
 } from './state-queries.js';
 import { escapeHTML } from './utils.js';
+
+function createSectionHeader(title) {
+    const header = document.createElement('section');
+    header.className = 'section-header';
+    header.innerHTML = `<h2 class="section-title">${escapeHTML(title)}</h2>`;
+    return header;
+}
 
 function createWrapper(qid, label, { wide = false } = {}) {
     const wrapper = document.createElement('section');
@@ -86,35 +94,49 @@ export function renderYearView(state, charts) {
     const repondants = getRepondants(state, year);
     const schemaColors = state.schema.colors;
 
-    for (const qid of manifest.questions) {
-        const q = state.schema.questions[qid];
-        if (!q) {
-            console.warn(`Question inconnue dans le schéma : ${qid}`);
-            continue;
-        }
-        const data = getData(state, year, qid);
+    for (const section of manifestSections(manifest)) {
+        const wrappers = [];
+        for (const qid of section.questions) {
+            const q = state.schema.questions[qid];
+            if (!q) {
+                console.warn(`Question inconnue dans le schéma : ${qid}`);
+                continue;
+            }
+            const data = getData(state, year, qid);
 
-        if (q.chartType === 'average') {
-            if (!data || data.mean == null) continue;
-            container.appendChild(createWrapper(qid, q.label));
-            createAverageDisplay(`chart-${qid}`, data, q);
-            continue;
-        }
+            if (q.chartType === 'average') {
+                if (!data || data.mean == null) continue;
+                const wrapper = createWrapper(qid, q.label);
+                wrappers.push({ wrapper, render: () => createAverageDisplay(`chart-${qid}`, data, q) });
+                continue;
+            }
 
-        if (!data || data.length === 0 || repondants == null) continue;
+            if (!data || data.length === 0 || repondants == null) continue;
 
-        const isSankey = q.chartType === 'sankey';
-        container.appendChild(createWrapper(qid, q.label, { wide: isSankey }));
-        const canvasId = `chart-${qid}`;
-        let chart;
-        if (isSankey) {
-            chart = createSankeyChart(canvasId, data, q.columns || [], schemaColors);
-        } else if (q.chartType === 'pie') {
-            chart = createPieChart(canvasId, data, repondants, schemaColors);
-        } else {
-            chart = createBarChart(canvasId, data, repondants, schemaColors);
+            const isSankey = q.chartType === 'sankey';
+            const wrapper = createWrapper(qid, q.label, { wide: isSankey });
+            const canvasId = `chart-${qid}`;
+            wrappers.push({
+                wrapper,
+                render: () => {
+                    let chart;
+                    if (isSankey) {
+                        chart = createSankeyChart(canvasId, data, q.columns || [], schemaColors);
+                    } else if (q.chartType === 'pie') {
+                        chart = createPieChart(canvasId, data, repondants, schemaColors);
+                    } else {
+                        chart = createBarChart(canvasId, data, repondants, schemaColors);
+                    }
+                    if (chart) charts.set(canvasId, chart);
+                },
+            });
         }
-        if (chart) charts.set(canvasId, chart);
+        if (wrappers.length === 0) continue;
+        if (section.title) container.appendChild(createSectionHeader(section.title));
+        for (const { wrapper, render } of wrappers) {
+            container.appendChild(wrapper);
+            render();
+        }
     }
 }
 
@@ -125,27 +147,41 @@ export function renderCompareView(state, charts) {
 
     const schemaColors = state.schema.colors;
 
-    for (const qid of allCompareQuestions(state)) {
-        const q = state.schema.questions[qid];
-        if (!q) continue;
-        if (q.chartType === 'sankey') continue;
+    for (const section of mergedSections(state)) {
+        const wrappers = [];
+        for (const qid of section.questions) {
+            const q = state.schema.questions[qid];
+            if (!q) continue;
+            if (q.chartType === 'sankey') continue;
 
-        const years = compareYearsForQuestion(state, qid);
-        if (years.length < 2) continue;
+            const years = compareYearsForQuestion(state, qid);
+            if (years.length < 2) continue;
 
-        if (q.chartType === 'average') {
-            container.appendChild(createWrapper(qid, q.label));
-            renderCompareAverage(state, qid, q, years, charts);
-            continue;
+            if (q.chartType === 'average') {
+                const wrapper = createWrapper(qid, q.label);
+                wrappers.push({ wrapper, render: () => renderCompareAverage(state, qid, q, years, charts) });
+                continue;
+            }
+
+            const datasets = buildCompareMultiChoiceDatasets(state, qid, years, schemaColors);
+            if (datasets == null) continue;
+
+            const wrapper = createWrapper(qid, q.label);
+            const canvasId = `chart-${qid}`;
+            wrappers.push({
+                wrapper,
+                render: () => {
+                    const chart = createLineChart(canvasId, years, datasets);
+                    if (chart) charts.set(canvasId, chart);
+                },
+            });
         }
-
-        const datasets = buildCompareMultiChoiceDatasets(state, qid, years, schemaColors);
-        if (datasets == null) continue;
-
-        container.appendChild(createWrapper(qid, q.label));
-        const canvasId = `chart-${qid}`;
-        const chart = createLineChart(canvasId, years, datasets);
-        if (chart) charts.set(canvasId, chart);
+        if (wrappers.length === 0) continue;
+        if (section.title) container.appendChild(createSectionHeader(section.title));
+        for (const { wrapper, render } of wrappers) {
+            container.appendChild(wrapper);
+            render();
+        }
     }
 }
 

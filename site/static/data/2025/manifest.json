@@ -5,18 +5,23 @@
   },
   "programs": ["programmation"],
   "periode": "Hiver 2025",
-  "questions": [
-    "techno",
-    "langage",
-    "framework",
-    "os",
-    "outil-developpement",
-    "outil-gestion-taches",
-    "communication",
-    "vsc",
-    "droit-ia",
-    "ia-utilise",
-    "bd",
-    "autre-outil"
+  "sections": [
+    {
+      "title": "Technologies",
+      "questions": [
+        "techno",
+        "langage",
+        "framework",
+        "os",
+        "outil-developpement",
+        "outil-gestion-taches",
+        "communication",
+        "vsc",
+        "droit-ia",
+        "ia-utilise",
+        "bd",
+        "autre-outil"
+      ]
+    }
   ]
 }

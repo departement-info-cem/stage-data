@@ -6,31 +6,41 @@
   },
   "programs": ["programmation", "reseautique"],
   "periode": "Hiver 2026",
-  "questions": [
-    "teletravail",
-    "recommandation",
-    "offre",
-    "salaire-moyen",
-    "universite",
-    "job-universite-sankey",
-    "techno",
-    "langage",
-    "framework",
-    "os",
-    "outil-developpement",
-    "outil-gestion-taches",
-    "communication",
-    "vsc",
-    "droit-ia",
-    "ia-utilise",
-    "bd",
-    "autre-outil",
-    "tests",
-    "services-administres",
-    "technologie-virtualisation",
-    "equipementier",
-    "plateforme-infonuagique",
-    "outil-gestion-parc",
-    "outil-configuration-automatisation"
+  "sections": [
+    {
+      "title": "Milieu de stage",
+      "questions": [
+        "teletravail",
+        "recommandation",
+        "offre",
+        "salaire-moyen",
+        "universite",
+        "job-universite-sankey"
+      ]
+    },
+    {
+      "title": "Technologies",
+      "questions": [
+        "techno",
+        "langage",
+        "framework",
+        "os",
+        "outil-developpement",
+        "outil-gestion-taches",
+        "communication",
+        "vsc",
+        "droit-ia",
+        "ia-utilise",
+        "bd",
+        "autre-outil",
+        "tests",
+        "services-administres",
+        "technologie-virtualisation",
+        "equipementier",
+        "plateforme-infonuagique",
+        "outil-gestion-parc",
+        "outil-configuration-automatisation"
+      ]
+    }
   ]
 }

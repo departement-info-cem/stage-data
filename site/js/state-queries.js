@@ -1,5 +1,47 @@
 import { DEFAULT_COLOR, PROGRAM_ALL } from './constants.js';
 
+export function manifestSections(manifest) {
+    if (!manifest) return [];
+    if (Array.isArray(manifest.sections)) return manifest.sections;
+    if (Array.isArray(manifest.questions)) {
+        return [{ title: null, questions: manifest.questions }];
+    }
+    return [];
+}
+
+export function manifestQuestionIds(manifest) {
+    const ids = [];
+    for (const section of manifestSections(manifest)) {
+        for (const qid of section.questions) ids.push(qid);
+    }
+    return ids;
+}
+
+export function mergedSections(state) {
+    const sections = [];
+    const indexByTitle = new Map();
+    const sortedYears = state.years.slice().sort();
+    for (let i = sortedYears.length - 1; i >= 0; i--) {
+        const manifest = state.manifests[sortedYears[i]];
+        for (const section of manifestSections(manifest)) {
+            const key = section.title || '';
+            let entry = indexByTitle.get(key);
+            if (!entry) {
+                entry = { title: section.title, questions: [], seen: new Set() };
+                indexByTitle.set(key, entry);
+                sections.push(entry);
+            }
+            for (const qid of section.questions) {
+                if (!entry.seen.has(qid)) {
+                    entry.seen.add(qid);
+                    entry.questions.push(qid);
+                }
+            }
+        }
+    }
+    return sections.map((s) => ({ title: s.title, questions: s.questions }));
+}
+
 export function getData(state, year, qid) {
     const yearData = state.data[year] && state.data[year][qid];
     if (!yearData) return null;
@@ -46,7 +88,7 @@ export function allProgramsUniverse(state) {
 export function yearHasFullProgramData(state, year, qid) {
     if (state.currentProgram !== PROGRAM_ALL) return true;
     const manifest = state.manifests[year];
-    if (!manifest || !manifest.questions.includes(qid)) return false;
+    if (!manifest || !manifestQuestionIds(manifest).includes(qid)) return false;
     const universe = allProgramsUniverse(state);
     if (universe.size === 0) return true;
     const yearData = state.data[year] && state.data[year][qid];
@@ -68,7 +110,7 @@ export function hasAnyYearChart(state, year) {
     const manifest = state.manifests[year];
     if (!manifest) return false;
     const repondants = getRepondants(state, year);
-    for (const qid of manifest.questions) {
+    for (const qid of manifestQuestionIds(manifest)) {
         const q = state.schema.questions[qid];
         if (!q) continue;
         const data = getData(state, year, qid);
@@ -85,7 +127,7 @@ export function allCompareQuestions(state) {
     const seen = new Set();
     const list = [];
     for (const year of state.years) {
-        for (const qid of state.manifests[year].questions) {
+        for (const qid of manifestQuestionIds(state.manifests[year])) {
             if (!seen.has(qid)) { seen.add(qid); list.push(qid); }
         }
     }

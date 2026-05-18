@@ -59,7 +59,24 @@ class DataVisualizationApp {
         }
     }
 
+    resetFilters() {
+        this.state.currentView = 'year';
+        this.state.currentYear = this.state.years[this.state.years.length - 1];
+        this.state.currentProgram = PROGRAM_ALL;
+        ensureValidProgram(this.state);
+        writeUrlState(this.state);
+        this.clearUrlHash();
+        renderSelectors(this.state);
+        this.render();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     setupEventListeners() {
+        const resetBtn = document.getElementById('reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetFilters());
+        }
+
         document.querySelector('.year-selector').addEventListener('click', (e) => {
             const btn = e.target.closest('.year-btn');
             if (!btn) return;
@@ -123,21 +140,16 @@ class DataVisualizationApp {
 
     setupScrollEffects() {
         const header = document.querySelector('.site-header');
-        if (header) {
-            const COMPACT_THRESHOLD = 60;
-            let ticking = false;
-            const updateHeader = () => {
-                const scrolled = window.scrollY > COMPACT_THRESHOLD;
-                header.classList.toggle('is-compact', scrolled);
-                ticking = false;
-            };
-            window.addEventListener('scroll', () => {
-                if (!ticking) {
-                    window.requestAnimationFrame(updateHeader);
-                    ticking = true;
-                }
-            }, { passive: true });
-            updateHeader();
+        if (header && 'IntersectionObserver' in window) {
+            const sentinel = document.createElement('div');
+            sentinel.className = 'header-sentinel';
+            sentinel.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(sentinel);
+
+            const headerObserver = new IntersectionObserver(([entry]) => {
+                header.classList.toggle('is-compact', !entry.isIntersecting);
+            }, { threshold: 0 });
+            headerObserver.observe(sentinel);
         }
 
         if ('IntersectionObserver' in window) {
