@@ -19,7 +19,7 @@
     "label": "Quels outils de développement as-tu utilisés ?",
     "chartType": "bar"
   },
-  "outils-gestion-taches": {
+  "outil-gestion-taches": {
     "label": "Quels outils de gestion de tâches as-tu utilisés ?",
     "chartType": "bar"
   },
@@ -93,7 +93,7 @@
     "label": "Quels outils as-tu utilisés pour la gestion du parc informatique ?",
     "chartType": "bar"
   },
-  "outil-configuration": {
+  "outil-configuration-automatisation": {
     "label": "Quels outils as-tu utilisés pour la gestion des configurations et l'automatisation ?",
     "chartType": "bar"
   }
