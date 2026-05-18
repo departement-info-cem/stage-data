@@ -117,7 +117,7 @@ class DataVisualizationApp {
         const perProgram = {};
         if (programs) for (const p of programs) perProgram[p] = new Map();
 
-        for (let i = 1; i < rows.length; i++) {
+        for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             if (!Array.isArray(row) || row.length === 0) continue;
 
@@ -155,7 +155,7 @@ class DataVisualizationApp {
         const stats = { total: { sum: 0, count: 0 } };
         if (programs) for (const p of programs) stats[p] = { sum: 0, count: 0 };
 
-        for (let i = 1; i < rows.length; i++) {
+        for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             if (!Array.isArray(row) || row.length === 0) continue;
 
@@ -409,18 +409,19 @@ class DataVisualizationApp {
                 continue;
             }
             const data = this.getData(year, qid);
-            const wrapper = this.createWrapper(qid, q.label);
-            container.appendChild(wrapper);
 
             if (q.chartType === 'average') {
+                if (!data || data.mean == null) continue;
+                const wrapper = this.createWrapper(qid, q.label);
+                container.appendChild(wrapper);
                 this.createAverageDisplay(`chart-${qid}`, data, q);
                 continue;
             }
 
-            if (!data || data.length === 0 || repondants == null) {
-                this.renderEmptyChart(wrapper, qid);
-                continue;
-            }
+            if (!data || data.length === 0 || repondants == null) continue;
+
+            const wrapper = this.createWrapper(qid, q.label);
+            container.appendChild(wrapper);
 
             if (q.chartType === 'pie') {
                 this.createPieChart(`chart-${qid}`, data, repondants);
@@ -447,10 +448,14 @@ class DataVisualizationApp {
             const q = this.schema.questions[qid];
             if (!q) continue;
 
-            const wrapper = this.createWrapper(qid, q.label);
-            container.appendChild(wrapper);
-
             if (q.chartType === 'average') {
+                const hasAny = this.years.some((y) => {
+                    const d = this.getData(y, qid);
+                    return d && d.mean != null;
+                });
+                if (!hasAny) continue;
+                const wrapper = this.createWrapper(qid, q.label);
+                container.appendChild(wrapper);
                 this.renderCompareAverage(qid, q);
                 continue;
             }
@@ -470,10 +475,10 @@ class DataVisualizationApp {
                 .slice(0, 10)
                 .map(([v]) => v);
 
-            if (topValues.length === 0) {
-                this.renderEmptyChart(wrapper, qid);
-                continue;
-            }
+            if (topValues.length === 0) continue;
+
+            const wrapper = this.createWrapper(qid, q.label);
+            container.appendChild(wrapper);
 
             const assignedColors = this.assignColors(topValues);
             const datasets = topValues.map((value, idx) => {
@@ -533,11 +538,6 @@ class DataVisualizationApp {
         const container = canvas.parentElement;
         const decimals = q.decimals != null ? q.decimals : 2;
         const unit = q.unit || '';
-
-        if (!data || data.mean == null) {
-            container.innerHTML = '<p class="chart-empty">Aucune donnée disponible pour ce filtre.</p>';
-            return;
-        }
         const formatted = data.mean.toFixed(decimals);
         const responseLabel = data.count > 1 ? 'réponses' : 'réponse';
         container.innerHTML = `
@@ -570,12 +570,7 @@ class DataVisualizationApp {
         return wrapper;
     }
 
-    renderEmptyChart(wrapper, qid) {
-        const container = wrapper.querySelector('.chart-container');
-        container.innerHTML = `<p class="chart-empty">Données non disponibles pour ce filtre.</p>`;
-    }
-
-    buildExportData(qid) {
+buildExportData(qid) {
         const q = this.schema.questions[qid];
         const sheetName = (q && q.label) || qid;
         const programSuffix = this.currentProgram === PROGRAM_ALL ? '' : `-${this.currentProgram}`;
