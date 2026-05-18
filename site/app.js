@@ -140,16 +140,42 @@ class DataVisualizationApp {
 
     setupScrollEffects() {
         const header = document.querySelector('.site-header');
-        if (header && 'IntersectionObserver' in window) {
-            const sentinel = document.createElement('div');
-            sentinel.className = 'header-sentinel';
-            sentinel.setAttribute('aria-hidden', 'true');
-            header.insertAdjacentElement('afterend', sentinel);
+        if (header) {
+            const spacer = document.createElement('div');
+            spacer.className = 'site-header-spacer';
+            spacer.setAttribute('aria-hidden', 'true');
+            spacer.style.height = `${header.offsetHeight}px`;
+            header.insertAdjacentElement('afterend', spacer);
 
-            const headerObserver = new IntersectionObserver(([entry]) => {
-                header.classList.toggle('is-compact', !entry.isIntersecting);
-            }, { threshold: 0 });
-            headerObserver.observe(sentinel);
+            if ('ResizeObserver' in window) {
+                const ro = new ResizeObserver(() => {
+                    spacer.style.height = `${header.offsetHeight}px`;
+                });
+                ro.observe(header);
+            }
+
+            const COMPACT_ENTER = 12;
+            const COMPACT_EXIT = 2;
+            let isCompact = false;
+            let ticking = false;
+            const updateHeader = () => {
+                const y = window.scrollY;
+                if (!isCompact && y > COMPACT_ENTER) {
+                    isCompact = true;
+                    header.classList.add('is-compact');
+                } else if (isCompact && y < COMPACT_EXIT) {
+                    isCompact = false;
+                    header.classList.remove('is-compact');
+                }
+                ticking = false;
+            };
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateHeader);
+                    ticking = true;
+                }
+            }, { passive: true });
+            updateHeader();
         }
 
         if ('IntersectionObserver' in window) {
