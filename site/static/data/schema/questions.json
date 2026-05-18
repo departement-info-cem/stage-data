@@ -96,5 +96,10 @@
   "outil-configuration-automatisation": {
     "label": "Quels outils as-tu utilisés pour la gestion des configurations et l'automatisation ?",
     "chartType": "bar"
+  },
+  "job-universite-sankey": {
+    "label": "Relation entre l'offre d'emploi reçue et l'intention de poursuivre à l'université",
+    "chartType": "sankey",
+    "columns": ["Offre d'emploi reçue", "Études universitaires l'an prochain"]
   }
 }

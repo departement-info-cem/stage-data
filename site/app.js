@@ -50,6 +50,7 @@ class DataVisualizationApp {
             writeUrlState(this.state);
             renderSelectors(this.state);
             this.setupEventListeners();
+            this.setupScrollEffects();
             this.render();
             this.scrollToHash();
         } catch (err) {
@@ -120,6 +121,47 @@ class DataVisualizationApp {
         window.history.replaceState(null, '', url);
     }
 
+    setupScrollEffects() {
+        const header = document.querySelector('.site-header');
+        if (header) {
+            const COMPACT_THRESHOLD = 60;
+            let ticking = false;
+            const updateHeader = () => {
+                const scrolled = window.scrollY > COMPACT_THRESHOLD;
+                header.classList.toggle('is-compact', scrolled);
+                ticking = false;
+            };
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateHeader);
+                    ticking = true;
+                }
+            }, { passive: true });
+            updateHeader();
+        }
+
+        if ('IntersectionObserver' in window) {
+            this.revealObserver = new IntersectionObserver((entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        this.revealObserver.unobserve(entry.target);
+                    }
+                }
+            }, { rootMargin: '0px 0px -60px 0px', threshold: 0.01 });
+        }
+    }
+
+    observeChartReveal() {
+        if (!this.revealObserver) return;
+        const wrappers = document.querySelectorAll('.chart-wrapper:not(.is-visible)');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                wrappers.forEach((el) => this.revealObserver.observe(el));
+            });
+        });
+    }
+
     render() {
         this.destroyCharts();
         if (this.state.currentView === 'compare') {
@@ -128,6 +170,7 @@ class DataVisualizationApp {
             renderYearView(this.state, this.charts);
         }
         if (window.lucide) window.lucide.createIcons();
+        this.observeChartReveal();
     }
 
     destroyCharts() {

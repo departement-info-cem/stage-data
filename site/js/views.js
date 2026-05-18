@@ -5,6 +5,7 @@ import {
     createBarChart,
     createLineChart,
     createPieChart,
+    createSankeyChart,
 } from './charts.js';
 import {
     allCompareQuestions,
@@ -16,9 +17,9 @@ import {
 } from './state-queries.js';
 import { escapeHTML } from './utils.js';
 
-function createWrapper(qid, label) {
+function createWrapper(qid, label, { wide = false } = {}) {
     const wrapper = document.createElement('section');
-    wrapper.className = 'chart-wrapper';
+    wrapper.className = wide ? 'chart-wrapper chart-wrapper--wide' : 'chart-wrapper';
     wrapper.id = `q-${qid}`;
     wrapper.innerHTML = `
         <header class="chart-header">
@@ -102,11 +103,17 @@ export function renderYearView(state, charts) {
 
         if (!data || data.length === 0 || repondants == null) continue;
 
-        container.appendChild(createWrapper(qid, q.label));
+        const isSankey = q.chartType === 'sankey';
+        container.appendChild(createWrapper(qid, q.label, { wide: isSankey }));
         const canvasId = `chart-${qid}`;
-        const chart = q.chartType === 'pie'
-            ? createPieChart(canvasId, data, repondants, schemaColors)
-            : createBarChart(canvasId, data, repondants, schemaColors);
+        let chart;
+        if (isSankey) {
+            chart = createSankeyChart(canvasId, data, q.columns || [], schemaColors);
+        } else if (q.chartType === 'pie') {
+            chart = createPieChart(canvasId, data, repondants, schemaColors);
+        } else {
+            chart = createBarChart(canvasId, data, repondants, schemaColors);
+        }
         if (chart) charts.set(canvasId, chart);
     }
 }
@@ -121,6 +128,7 @@ export function renderCompareView(state, charts) {
     for (const qid of allCompareQuestions(state)) {
         const q = state.schema.questions[qid];
         if (!q) continue;
+        if (q.chartType === 'sankey') continue;
 
         const years = compareYearsForQuestion(state, qid);
         if (years.length < 2) continue;

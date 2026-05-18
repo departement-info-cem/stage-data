@@ -70,52 +70,100 @@ code, pre, .mono {
     background-color: var(--cem-blue-dark);
     border-bottom: 3px solid var(--cem-cyan);
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    transition: box-shadow 0.3s ease;
+    will-change: transform;
+}
+
+.site-header.is-compact {
+    box-shadow: 0 4px 20px rgba(12, 52, 85, 0.35);
 }
 
 .site-header__inner {
     max-width: var(--content-max);
     margin: 0 auto;
-    padding: 1.5rem var(--content-px);
+    padding: 2.5rem var(--content-px) 2rem;
+    transition: padding 0.3s ease;
+}
+
+.site-header.is-compact .site-header__inner {
+    padding: 0.75rem var(--content-px);
 }
 
 .site-header__top {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    transition: gap 0.3s ease, margin-bottom 0.3s ease;
+}
+
+.site-header.is-compact .site-header__top {
+    gap: 1rem;
+    margin-bottom: 0.65rem;
 }
 
 .site-header__logo {
-    height: 48px;
+    height: 68px;
     width: auto;
     display: block;
+    transition: height 0.3s ease;
+}
+
+.site-header.is-compact .site-header__logo {
+    height: 36px;
 }
 
 .site-header__divider {
     width: 1px;
-    height: 40px;
+    height: 56px;
     background-color: rgba(255, 255, 255, 0.2);
     flex-shrink: 0;
+    transition: height 0.3s ease;
+}
+
+.site-header.is-compact .site-header__divider {
+    height: 32px;
 }
 
 .site-header__title-block {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .site-header h1 {
-    font-size: 1.125rem;
-    font-weight: 600;
+    font-size: 1.75rem;
+    font-weight: 700;
     color: white;
-    line-height: 1.3;
-    letter-spacing: -0.005em;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    transition: font-size 0.3s ease;
+}
+
+.site-header.is-compact h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
 }
 
 .site-header__subtitle {
-    font-size: 0.875rem;
+    font-size: 1rem;
     color: var(--cem-blue-light);
-    margin-top: 0.125rem;
+    margin-top: 0.25rem;
     font-weight: 400;
+    transition: font-size 0.3s ease, max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+    max-height: 2rem;
+    overflow: hidden;
+}
+
+.site-header.is-compact .site-header__subtitle {
+    font-size: 0.8rem;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
 }
 
 /* ----- Filtres (year + program) ----- */
@@ -124,6 +172,11 @@ code, pre, .mono {
     flex-wrap: wrap;
     gap: 0.75rem;
     align-items: center;
+    transition: gap 0.3s ease, margin 0.3s ease;
+}
+
+.site-header.is-compact .site-header__filters {
+    gap: 0.5rem;
 }
 
 .year-selector,
@@ -195,9 +248,19 @@ code, pre, .mono {
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
-    margin-top: 1rem;
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.8);
+    margin-top: 1.25rem;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.85);
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.3s ease, font-size 0.3s ease;
+    max-height: 8rem;
+    overflow: hidden;
+}
+
+.site-header.is-compact #general-info {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
 }
 
 #general-info p {
@@ -271,6 +334,47 @@ code, pre, .mono {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    opacity: 0;
+    transform: translateY(48px) scale(0.98);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.25s ease;
+    will-change: transform, opacity;
+}
+
+.chart-wrapper.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.charts-container .chart-wrapper:nth-child(2n) {
+    transition-delay: 0.08s;
+}
+
+.chart-wrapper[id] {
+    scroll-margin-top: 90px;
+}
+
+.chart-wrapper--wide {
+    grid-column: 1 / -1;
+}
+
+.chart-wrapper:hover {
+    box-shadow: 0 4px 14px rgba(12, 52, 85, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chart-wrapper {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .site-header,
+    .site-header *,
+    #general-info {
+        transition: none !important;
+    }
 }
 
 .chart-header {

@@ -1,5 +1,5 @@
 import { fetchJSON } from './utils.js';
-import { aggregateAverage, aggregateMultiChoice } from './aggregator.js';
+import { aggregateAverage, aggregateMultiChoice, aggregateSankey } from './aggregator.js';
 
 export async function loadSchema() {
     const [questions, aliases, colors, programs] = await Promise.all([
@@ -69,7 +69,7 @@ export async function loadAllData({ years, manifests, schema, aliasLookup }) {
 async function loadQuestionCSV({ year, questionId, manifest, schema, aliasLookup, rawRows }) {
     const programs = manifest.programs;
     const q = (schema && schema.questions[questionId]) || {};
-    const isAverage = q.chartType === 'average';
+    const chartType = q.chartType;
     const response = await fetch(`static/data/${year}/${questionId}.csv`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
@@ -79,8 +79,10 @@ async function loadQuestionCSV({ year, questionId, manifest, schema, aliasLookup
             skipEmptyLines: true,
             complete: (results) => {
                 rawRows[year][questionId] = results.data;
-                if (isAverage) {
+                if (chartType === 'average') {
                     resolve(aggregateAverage(results.data, programs, year, questionId));
+                } else if (chartType === 'sankey') {
+                    resolve(aggregateSankey(results.data, programs, aliasLookup));
                 } else {
                     resolve(aggregateMultiChoice(results.data, programs, aliasLookup));
                 }

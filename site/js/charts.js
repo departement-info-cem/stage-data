@@ -1,4 +1,5 @@
 import { assignColors } from './colors.js';
+import { DEFAULT_COLOR } from './constants.js';
 import { escapeHTML } from './utils.js';
 
 const TOOLTIP_BASE = {
@@ -133,6 +134,102 @@ export function createPieChart(canvasId, data, repondants, schemaColors) {
             },
             animation: ANIMATION,
         },
+    });
+}
+
+const columnTitlesPlugin = {
+    id: 'columnTitles',
+    afterDraw(chart, _args, opts) {
+        if (!opts || !Array.isArray(opts.columns) || opts.columns.length === 0) return;
+        const ctx = chart.ctx;
+        const { chartArea } = chart;
+        const n = opts.columns.length;
+        ctx.save();
+        ctx.font = '600 14px Geist, system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#0C3455';
+        ctx.textBaseline = 'top';
+        const top = Math.max(8, chartArea.top - 26);
+        for (let i = 0; i < n; i++) {
+            const t = n === 1 ? 0.5 : i / (n - 1);
+            const x = chartArea.left + (chartArea.right - chartArea.left) * t;
+            ctx.textAlign = i === 0 ? 'left' : (i === n - 1 ? 'right' : 'center');
+            ctx.fillText(String(opts.columns[i]), x, top);
+        }
+        ctx.restore();
+    },
+};
+
+export function createSankeyChart(canvasId, data, columns, schemaColors) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    if (!data || data.length === 0) return null;
+
+    const parseKey = (key) => {
+        const sep = key.indexOf('::');
+        return { col: parseInt(key.slice(1, sep), 10), value: key.slice(sep + 2) };
+    };
+
+    const labels = {};
+    const columnMap = {};
+    const valueByKey = {};
+    for (const flow of data) {
+        for (const k of [flow.from, flow.to]) {
+            if (labels[k]) continue;
+            const { col, value } = parseKey(k);
+            labels[k] = value;
+            columnMap[k] = col;
+            valueByKey[k] = value;
+        }
+    }
+
+    const uniqueValues = Array.from(new Set(Object.values(valueByKey)));
+    const valueColors = assignColors(uniqueValues, schemaColors);
+    const colorByValue = new Map();
+    uniqueValues.forEach((v, i) => colorByValue.set(v, valueColors[i]));
+    const colorForKey = (key) => colorByValue.get(valueByKey[key]) || DEFAULT_COLOR;
+
+    const minHeight = 360;
+    const perFlow = 18;
+    canvas.parentElement.style.height = `${Math.max(minHeight, 220 + data.length * perFlow)}px`;
+
+    const ctx = canvas.getContext('2d');
+    return new Chart(ctx, {
+        type: 'sankey',
+        data: {
+            datasets: [{
+                data,
+                labels,
+                column: columnMap,
+                colorFrom: (c) => colorForKey(c.dataset.data[c.dataIndex].from),
+                colorTo: (c) => colorForKey(c.dataset.data[c.dataIndex].to),
+                colorMode: 'gradient',
+                borderWidth: 0,
+                size: 'max',
+                font: { size: 14, family: 'Geist, system-ui, sans-serif' },
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 36, bottom: 8, left: 8, right: 8 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...TOOLTIP_BASE,
+                    callbacks: {
+                        title: () => '',
+                        label: (c) => {
+                            const d = c.dataset.data[c.dataIndex];
+                            const noun = d.flow > 1 ? 'étudiants' : 'étudiant';
+                            return `${labels[d.from]} → ${labels[d.to]} : ${d.flow} ${noun}`;
+                        },
+                    },
+                },
+                columnTitles: { columns: columns || [] },
+            },
+            animation: ANIMATION,
+        },
+        plugins: [columnTitlesPlugin],
     });
 }
 

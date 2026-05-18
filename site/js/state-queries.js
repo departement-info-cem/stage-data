@@ -95,6 +95,7 @@ export function allCompareQuestions(state) {
 export function compareYearsForQuestion(state, qid) {
     const q = state.schema.questions[qid];
     if (!q) return [];
+    if (q.chartType === 'sankey') return [];
     return state.years.filter((y) => {
         if (!yearHasFullProgramData(state, y, qid)) return false;
         const d = getData(state, y, qid);
