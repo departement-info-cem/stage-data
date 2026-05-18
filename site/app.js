@@ -238,6 +238,38 @@ class DataVisualizationApp {
         return yearData[this.currentProgram] || null;
     }
 
+    allProgramsUniverse() {
+        const universe = new Set();
+        for (const y of this.years) {
+            const m = this.manifests[y];
+            if (m && Array.isArray(m.programs)) {
+                for (const p of m.programs) universe.add(p);
+            }
+        }
+        return universe;
+    }
+
+    yearHasFullProgramData(year, qid) {
+        if (this.currentProgram !== PROGRAM_ALL) return true;
+        const manifest = this.manifests[year];
+        if (!manifest || !manifest.questions.includes(qid)) return false;
+        const universe = this.allProgramsUniverse();
+        if (universe.size === 0) return true;
+        const yearData = this.data[year] && this.data[year][qid];
+        if (!yearData) return false;
+        const q = this.schema.questions[qid];
+        if (q && q.chartType === 'average') {
+            for (const p of universe) {
+                if (!yearData[p] || yearData[p].count === 0) return false;
+            }
+            return true;
+        }
+        for (const p of universe) {
+            if (!Array.isArray(yearData[p]) || yearData[p].length === 0) return false;
+        }
+        return true;
+    }
+
     getRepondants(year) {
         const r = this.manifests[year].repondants || {};
         if (this.currentProgram === PROGRAM_ALL) return r.total;
@@ -448,20 +480,22 @@ class DataVisualizationApp {
             const q = this.schema.questions[qid];
             if (!q) continue;
 
+            const years = this.years.filter((y) => this.yearHasFullProgramData(y, qid));
+
             if (q.chartType === 'average') {
-                const hasAny = this.years.some((y) => {
+                const hasAny = years.some((y) => {
                     const d = this.getData(y, qid);
                     return d && d.mean != null;
                 });
                 if (!hasAny) continue;
                 const wrapper = this.createWrapper(qid, q.label);
                 container.appendChild(wrapper);
-                this.renderCompareAverage(qid, q);
+                this.renderCompareAverage(qid, q, years);
                 continue;
             }
 
             const valueTotals = new Map();
-            for (const year of this.years) {
+            for (const year of years) {
                 const items = this.getData(year, qid);
                 const rep = this.getRepondants(year);
                 if (!items || !rep) continue;
@@ -483,7 +517,7 @@ class DataVisualizationApp {
             const assignedColors = this.assignColors(topValues);
             const datasets = topValues.map((value, idx) => {
                 const color = assignedColors[idx];
-                const data = this.years.map((year) => {
+                const data = years.map((year) => {
                     const items = this.getData(year, qid);
                     const rep = this.getRepondants(year);
                     if (!items || !rep) return null;
@@ -502,15 +536,15 @@ class DataVisualizationApp {
                 };
             });
 
-            this.createLineChart(`chart-${qid}`, this.years, datasets);
+            this.createLineChart(`chart-${qid}`, years, datasets);
         }
     }
 
-    renderCompareAverage(qid, q) {
+    renderCompareAverage(qid, q, years) {
         const decimals = q.decimals != null ? q.decimals : 2;
         const unit = q.unit || '';
         const color = this.programColor(this.currentProgram);
-        const seriesData = this.years.map((year) => {
+        const seriesData = years.map((year) => {
             const d = this.getData(year, qid);
             return d && d.mean != null ? +d.mean.toFixed(decimals) : null;
         });
@@ -524,7 +558,7 @@ class DataVisualizationApp {
             fill: false,
             spanGaps: false
         };
-        this.createLineChart(`chart-${qid}`, this.years, [dataset], {
+        this.createLineChart(`chart-${qid}`, years, [dataset], {
             yLabel: unit ? `Moyenne (${unit})` : 'Moyenne',
             yFormatter: (v) => unit ? `${v} ${unit}` : String(v),
             tooltipFormatter: (c) => `${c.dataset.label} : ${c.parsed.y}${unit ? ' ' + unit : ''}`,

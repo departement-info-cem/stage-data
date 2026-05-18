@@ -13,7 +13,7 @@
   },
   "os": {
     "label": "Quel système d'exploitation as-tu utilisé ?",
-    "chartType": "pie"
+    "chartType": "bar"
   },
   "outil-developpement": {
     "label": "Quels outils de développement as-tu utilisés ?",
@@ -29,7 +29,7 @@
   },
   "vsc": {
     "label": "Quels systèmes de gestion de code source as-tu utilisés ?",
-    "chartType": "pie"
+    "chartType": "bar"
   },
   "droit-ia": {
     "label": "Avais-tu le droit d'utiliser des intelligences artificielles pour t'aider ?",
@@ -44,7 +44,7 @@
     "chartType": "bar"
   },
   "autre-outil": {
-    "label": "Autres outils utilisés",
+    "label": "Autres outils utilisés.",
     "chartType": "bar"
   },
   "teletravail": {
@@ -52,25 +52,25 @@
     "chartType": "pie"
   },
   "recommandation": {
-    "label": "Je recommande le milieu de stage que j'ai eu aux prochains étudiants de mon programme",
+    "label": "Je recommande le milieu de stage que j'ai eu aux prochains étudiants de mon programme.",
     "chartType": "pie"
   },
   "offre": {
-    "label": "Au moment de compléter ce formulaire, j'ai reçu une offre d'emploi formelle en informatique",
+    "label": "Au moment de compléter ce formulaire, j'ai reçu une offre d'emploi formelle en informatique.",
     "chartType": "pie"
   },
   "salaire-moyen": {
-    "label": "Si tu as obtenu un emploi, veux-tu nous dire le salaire horaire qu'on t'as offert",
+    "label": "Si tu as obtenu un emploi, veux-tu nous dire le salaire horaire qu'on t'as offert.",
     "chartType": "average",
     "unit": "$/h",
     "decimals": 2
   },
   "universite": {
-    "label": "J'ai l'intention de poursuivre mes études à l'université dès la prochaine session",
+    "label": "J'ai l'intention de poursuivre mes études à l'université dès la prochaine session.",
     "chartType": "pie"
   },
   "tests": {
-    "label": "As-tu rédigé des tests pendant ?",
+    "label": "As-tu rédigé des tests ?",
     "chartType": "pie"
   },
   "services-administres": {
