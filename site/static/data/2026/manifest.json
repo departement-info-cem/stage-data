@@ -1,0 +1,35 @@
+{
+  "repondants": {
+    "total": 52,
+    "programmation": 33,
+    "reseautique": 19
+  },
+  "programs": ["programmation", "reseautique"],
+  "periode": "Hiver 2026",
+  "questions": [
+    "teletravail",
+    "recommandation",
+    "offre",
+    "salaire-moyen",
+    "universite",
+    "techno",
+    "langage",
+    "framework",
+    "os",
+    "outil-developpement",
+    "outil-gestion-taches",
+    "communication",
+    "vsc",
+    "droit-ia",
+    "ia-utilise",
+    "bd",
+    "autre-outil",
+    "tests",
+    "services-administres",
+    "technologie-virtualisation",
+    "equipementier",
+    "plateforme-infonuagique",
+    "outil-gestion-parc",
+    "outil-configuration-automatisation"
+  ]
+}

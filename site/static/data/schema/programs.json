@@ -1,0 +1,10 @@
+{
+  "programmation": {
+    "label": "Programmation",
+    "color": "#9b59b6"
+  },
+  "reseautique": {
+    "label": "Réseautique",
+    "color": "#1abc9c"
+  }
+}

@@ -35,6 +35,40 @@ h1 {
     display: flex;
     justify-content: center;
     gap: 10px;
+    flex-wrap: wrap;
+}
+
+.program-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.program-selector[hidden] {
+    display: none;
+}
+
+.program-btn {
+    background: #ecf0f1;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #7f8c8d;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.program-btn:hover {
+    background: #d5dbdb;
+    transform: translateY(-1px);
+}
+
+.program-btn.active {
+    color: white;
 }
 
 .year-btn {
@@ -60,6 +94,32 @@ h1 {
     box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
+.year-btn.compare-btn {
+    margin-left: 12px;
+}
+
+.year-btn.compare-btn.active {
+    background: #16a085;
+    box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);
+}
+
+#general-info {
+    margin-top: 16px;
+    color: #555;
+    text-align: center;
+}
+
+#general-info ul {
+    list-style: none;
+    margin-top: 8px;
+    padding: 0;
+}
+
+#general-info li {
+    padding: 2px 0;
+}
+
+
 .charts-container {
     display: flex;
     gap: 30px;
@@ -71,28 +131,120 @@ h1 {
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.chart-wrapper:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.chart-title {
-    text-align: center;
-    font-size: 1.5em;
-    font-weight: 700;
-    color: #2c3e50;
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 3px solid #3498db;
+}
+
+.chart-title {
+    text-align: left;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.export-btn {
+    background: #ecf0f1;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #2c3e50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.export-btn:hover {
+    background: #3498db;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.export-btn--xlsx:hover {
+    background: #1d6f42;
+}
+
+.export-btn:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+.export-btn--xlsx:focus-visible {
+    outline-color: #1d6f42;
+}
+
+.export-btn svg {
+    display: block;
+    width: 20px;
+    height: 20px;
 }
 
 .chart-container {
     position: relative;
     height: 400px;
     width: 100%;
+}
+
+.chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #95a5a6;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.chart-average {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+}
+
+.chart-average__value {
+    font-size: 5em;
+    font-weight: 800;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.chart-average__unit {
+    font-size: 0.4em;
+    font-weight: 600;
+    color: #7f8c8d;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.chart-average__count {
+    margin-top: 14px;
+    font-size: 1em;
+    color: #7f8c8d;
 }
 
 .loading {

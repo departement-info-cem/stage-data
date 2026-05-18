@@ -1,0 +1,100 @@
+{
+  "techno": {
+    "label": "Quels types de technologies as-tu développées pendant ton stage ?",
+    "chartType": "bar"
+  },
+  "langage": {
+    "label": "Quels langages as-tu utilisés ?",
+    "chartType": "bar"
+  },
+  "framework": {
+    "label": "Quels frameworks / librairies as-tu utilisés ?",
+    "chartType": "bar"
+  },
+  "os": {
+    "label": "Quel système d'exploitation as-tu utilisé ?",
+    "chartType": "pie"
+  },
+  "outil-developpement": {
+    "label": "Quels outils de développement as-tu utilisés ?",
+    "chartType": "bar"
+  },
+  "outils-gestion-taches": {
+    "label": "Quels outils de gestion de tâches as-tu utilisés ?",
+    "chartType": "bar"
+  },
+  "communication": {
+    "label": "Comment communiquais-tu avec ton équipe ?",
+    "chartType": "bar"
+  },
+  "vsc": {
+    "label": "Quels systèmes de gestion de code source as-tu utilisés ?",
+    "chartType": "pie"
+  },
+  "droit-ia": {
+    "label": "Avais-tu le droit d'utiliser des intelligences artificielles pour t'aider ?",
+    "chartType": "pie"
+  },
+  "ia-utilise": {
+    "label": "Quelles IA as-tu utilisées ?",
+    "chartType": "bar"
+  },
+  "bd": {
+    "label": "Quel système de base de données était utilisé ?",
+    "chartType": "bar"
+  },
+  "autre-outil": {
+    "label": "Autres outils utilisés",
+    "chartType": "bar"
+  },
+  "teletravail": {
+    "label": "En général, combien de jours par semaine effectuais-tu en télétravail (ou sur la route) pendant ton stage ?",
+    "chartType": "pie"
+  },
+  "recommandation": {
+    "label": "Je recommande le milieu de stage que j'ai eu aux prochains étudiants de mon programme",
+    "chartType": "pie"
+  },
+  "offre": {
+    "label": "Au moment de compléter ce formulaire, j'ai reçu une offre d'emploi formelle en informatique",
+    "chartType": "pie"
+  },
+  "salaire-moyen": {
+    "label": "Si tu as obtenu un emploi, veux-tu nous dire le salaire horaire qu'on t'as offert",
+    "chartType": "average",
+    "unit": "$/h",
+    "decimals": 2
+  },
+  "universite": {
+    "label": "J'ai l'intention de poursuivre mes études à l'université dès la prochaine session",
+    "chartType": "pie"
+  },
+  "tests": {
+    "label": "As-tu rédigé des tests pendant ?",
+    "chartType": "pie"
+  },
+  "services-administres": {
+    "label": "Quels types de services as-tu administrés ?",
+    "chartType": "bar"
+  },
+  "technologie-virtualisation": {
+    "label": "Quelle technologie de virtualisation as-tu utilisée ?",
+    "chartType": "bar"
+  },
+  "equipementier": {
+    "label": "Quel équipementier as-tu utilisé (incluant le physique et le virtuel) ?",
+    "chartType": "bar"
+  },
+  "plateforme-infonuagique": {
+    "label": "Quelle plateforme infonuagique as-tu utilisée ?",
+    "chartType": "bar"
+  },
+  "outil-gestion-parc": {
+    "label": "Quels outils as-tu utilisés pour la gestion du parc informatique ?",
+    "chartType": "bar"
+  },
+  "outil-configuration": {
+    "label": "Quels outils as-tu utilisés pour la gestion des configurations et l'automatisation ?",
+    "chartType": "bar"
+  }
+}

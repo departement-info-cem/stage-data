@@ -1,0 +1,22 @@
+{
+  "ClickUp": ["click up", "click-up", "clickup"],
+  "Visual Studio Code": ["vscode", "vs code", "vs-code"],
+  "Visual Studio": ["vs"],
+  "GitHub Copilot": ["github copilot", "copilot", "gh copilot"],
+  "ChatGPT": ["chat gpt", "chat-gpt", "gpt", "openai chatgpt"],
+  "JavaScript": ["js", "javascript"],
+  "TypeScript": ["ts", "typescript"],
+  "Microsoft SQL Server": ["mssql", "ms sql server", "sql server", "sqlserver"],
+  "GitHub": ["github"],
+  "GitLab": ["gitlab"],
+  "Node.js": ["nodejs", "node js", "node"],
+  "Next.js": ["nextjs", "next js"],
+  "Vue.js": ["vuejs", "vue"],
+  "PostgreSQL": ["postgres", "postgre", "psql"],
+  "MongoDB": ["mongo"],
+  "Tailwind CSS": ["tailwind", "tailwindcss"],
+  "C#": ["csharp", "c sharp", "c-sharp"],
+  "C++": ["cpp", "c plus plus"],
+  "Bash / Shell": ["bash", "shell", "sh"],
+  "macOS": ["mac", "mac os", "osx", "os x"]
+}
