@@ -70,6 +70,7 @@ class DataVisualizationApp {
             }
             ensureValidProgram(this.state);
             writeUrlState(this.state);
+            this.clearUrlHash();
             renderSelectors(this.state);
             this.render();
         });
@@ -81,6 +82,7 @@ class DataVisualizationApp {
                 if (!btn) return;
                 this.state.currentProgram = btn.dataset.program;
                 writeUrlState(this.state);
+                this.clearUrlHash();
                 renderProgramSelector(this.state);
                 this.render();
             });
@@ -110,6 +112,12 @@ class DataVisualizationApp {
         if (!hash) return;
         const target = document.getElementById(hash);
         if (target) target.scrollIntoView({ block: 'start' });
+    }
+
+    clearUrlHash() {
+        if (!window.location.hash) return;
+        const url = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState(null, '', url);
     }
 
     render() {

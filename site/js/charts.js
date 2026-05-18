@@ -115,10 +115,19 @@ export function createPieChart(canvasId, data, repondants, schemaColors) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { left: 12, right: 12, top: 6, bottom: 6 } },
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { padding: 20, usePointStyle: true, color: '#2c3e50', font: { size: 16 } },
+                    align: 'center',
+                    labels: {
+                        padding: 16,
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        color: '#0C3455',
+                        font: { size: 16 },
+                    },
                 },
                 tooltip: TOOLTIP_BASE,
             },

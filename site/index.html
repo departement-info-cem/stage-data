@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sondage annuel</title>
+    <title>Sondage annuel des stagiaires en technique informatique</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -15,31 +17,42 @@
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>Sondage annuel des stagiaires en technique informatique du CÉGEP Édouard-Montpetit au fil
-                des années</h1>
-            <nav class="year-selector" aria-label="Sélection de l'année ou de la vue comparative"></nav>
-            <nav class="program-selector" aria-label="Filtrer par programme" hidden></nav>
+    <header class="site-header">
+        <div class="site-header__inner">
+            <div class="site-header__top">
+                <img class="site-header__logo" src="static/img/logo_cegep.svg" alt="Cégep Édouard-Montpetit">
+                <div class="site-header__divider" aria-hidden="true"></div>
+                <div class="site-header__title-block">
+                    <h1>Sondage annuel des stagiaires en technique informatique</h1>
+                    <p class="site-header__subtitle">Au fil des années</p>
+                </div>
+            </div>
+            <div class="site-header__filters">
+                <nav class="year-selector filter-group filter-years" aria-label="Sélection de l'année ou de la vue comparative"></nav>
+                <nav class="program-selector filter-group filter-programs" aria-label="Filtrer par programme" hidden></nav>
+            </div>
             <div id="general-info" aria-live="polite">
                 Chargement des données générales…
             </div>
-        </header>
-        
-        <main>
-            <div class="charts-container" id="chartsContainer">
-                <!-- Les graphiques seront générés dynamiquement ici -->
-            </div>
-        </main>
+        </div>
+    </header>
 
-        <footer class="site-footer">
+    <main class="site-main">
+        <div class="charts-container" id="chartsContainer">
+            <!-- Les graphiques seront générés dynamiquement ici -->
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer__inner">
             <a class="footer-link" href="https://github.com/departement-info-cem/stage-data" target="_blank" rel="noopener noreferrer" aria-label="Code source sur GitHub">
-                <i data-lucide="github" aria-hidden="true"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 015.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.26 5.69.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.13 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
                 <span>Code source</span>
             </a>
             <span class="footer-credit">&copy; <span id="footer-year"></span> Pierre-Olivier Brillant — Tous droits réservés</span>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
     <script type="module" src="app.js"></script>
 </body>
 

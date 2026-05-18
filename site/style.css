@@ -1,241 +1,392 @@
-* {
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
+
+/* ===========================================
+   Cégep Édouard-Montpetit — Design system
+   =========================================== */
+
+:root {
+    /* Couleurs primaires */
+    --cem-blue-dark: #0C3455;
+    --cem-cyan: #14B1E7;
+    --cem-green: #8DC640;
+
+    /* Couleurs secondaires */
+    --cem-black: #000000;
+    --cem-blue-light: #8ED8F8;
+    --cem-forest: #278637;
+    --cem-gray-4: #545454;
+    --cem-red: #D93B20;
+    --cem-green-apple: #BCD85F;
+    --cem-gray-3: #969696;
+    --cem-orange: #F37021;
+    --cem-green-pale: #CFE5AE;
+    --cem-gray-2: #C8C8C8;
+    --cem-gold: #FDB913;
+    --cem-gray-1: #E6E6E6;
+    --cem-yellow-pale: #FFDF5D;
+
+    /* Sémantique */
+    --background: #F5F7FA;
+    --foreground: var(--cem-blue-dark);
+    --card-bg: #FFFFFF;
+    --border-color: var(--cem-gray-2);
+    --text-muted: var(--cem-gray-4);
+
+    --content-max: 100%;
+    --content-px: 2rem;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
+    font-family: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    line-height: 1.5;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
-    max-width: 1200px;
+code, pre, .mono {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* ===========================================
+   Header pleine largeur
+   =========================================== */
+
+.site-header {
+    background-color: var(--cem-blue-dark);
+    border-bottom: 3px solid var(--cem-cyan);
+    color: white;
+}
+
+.site-header__inner {
+    max-width: var(--content-max);
     margin: 0 auto;
-    padding: 20px;
+    padding: 1.5rem var(--content-px);
 }
 
-header {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 30px;
-}
-
-h1 {
-    text-align: center;
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 2.5em;
-}
-
-.year-selector {
+.site-header__top {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
+.site-header__logo {
+    height: 48px;
+    width: auto;
+    display: block;
+}
+
+.site-header__divider {
+    width: 1px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.site-header__title-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.site-header h1 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+}
+
+.site-header__subtitle {
+    font-size: 0.875rem;
+    color: var(--cem-blue-light);
+    margin-top: 0.125rem;
+    font-weight: 400;
+}
+
+/* ----- Filtres (year + program) ----- */
+.site-header__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.year-selector,
 .program-selector {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
     flex-wrap: wrap;
-    margin-top: 14px;
 }
 
 .program-selector[hidden] {
     display: none;
 }
 
+.year-btn,
 .program-btn {
-    background: #ecf0f1;
+    padding: 0.5rem 1rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    background: transparent;
     border: none;
-    padding: 10px 20px;
-    border-radius: 25px;
+    border-radius: 0.375rem;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #7f8c8d;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    line-height: 1.2;
 }
 
-.program-btn:hover:not(:disabled) {
-    background: #d5dbdb;
-    transform: translateY(-1px);
+.year-btn:hover:not(:disabled):not(.active),
+.program-btn:hover:not(:disabled):not(.active) {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: none;
 }
 
+.year-btn:disabled,
 .program-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
-.program-btn.active {
-    color: white;
-}
-
-.year-btn {
-    background: #ecf0f1;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    color: #7f8c8d;
-}
-
-.year-btn:hover {
-    background: #d5dbdb;
-    transform: translateY(-2px);
-}
-
 .year-btn.active {
-    background: #3498db;
-    color: white;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    background-color: var(--cem-cyan) !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 .year-btn.compare-btn {
-    margin-left: 12px;
+    margin-left: 0;
 }
 
 .year-btn.compare-btn.active {
-    background: #16a085;
-    box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);
+    background-color: var(--cem-cyan) !important;
 }
 
+.program-btn.active {
+    background-color: var(--cem-green) !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ----- Méta info ----- */
 #general-info {
-    margin-top: 16px;
-    color: #555;
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+#general-info p {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#general-info p::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--cem-green);
+    display: inline-block;
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+}
+
+#general-info strong {
+    color: white;
+    font-weight: 600;
 }
 
 #general-info ul {
     list-style: none;
-    margin-top: 8px;
+    margin: 0.5rem 0 0;
     padding: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.25rem 1rem;
 }
 
 #general-info li {
-    padding: 2px 0;
+    padding: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
 }
 
+#general-info li strong {
+    color: white;
+}
+
+/* ===========================================
+   Main content
+   =========================================== */
+
+.site-main {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 2rem var(--content-px);
+}
 
 .charts-container {
-    display: flex;
-    gap: 30px;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
 }
 
+/* ===========================================
+   Chart card
+   =========================================== */
+
 .chart-wrapper {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .chart-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 3px solid #3498db;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0;
+    background: transparent;
+    border-bottom: 1px solid var(--cem-gray-1);
+    color: var(--foreground);
 }
 
 .chart-title {
     text-align: left;
-    font-size: 1.5em;
-    font-weight: 700;
-    color: #2c3e50;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--foreground);
     margin: 0;
     flex: 1;
     min-width: 0;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    padding-left: 0.9rem;
+    border-left: 4px solid var(--cem-cyan);
 }
 
 .chart-title-link {
     display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    align-items: baseline;
+    gap: 0.5rem;
     color: inherit;
     text-decoration: none;
     border-radius: 4px;
 }
 
 .chart-title-link:focus-visible {
-    outline: 2px solid #3498db;
+    outline: 2px solid var(--cem-cyan);
     outline-offset: 3px;
 }
 
 .chart-title-icon {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     opacity: 0;
-    color: #7f8c8d;
+    color: var(--text-muted);
     transition: opacity 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 .chart-title-link:hover .chart-title-icon,
 .chart-title-link:focus-visible .chart-title-icon {
     opacity: 1;
-    color: #3498db;
+    color: var(--cem-cyan);
 }
 
 .chart-actions {
     display: flex;
-    gap: 8px;
+    gap: 0.25rem;
     flex-shrink: 0;
 }
 
 .export-btn {
-    background: #ecf0f1;
+    width: 32px;
+    height: 32px;
+    background: transparent;
     border: none;
-    padding: 8px;
-    border-radius: 6px;
+    border-radius: 0.375rem;
     cursor: pointer;
-    color: #2c3e50;
+    color: var(--text-muted);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 0;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    padding: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .export-btn:hover {
-    background: #3498db;
-    color: white;
-    transform: translateY(-1px);
+    background-color: var(--cem-gray-1);
+    color: var(--foreground);
+    transform: none;
 }
 
 .export-btn--xlsx:hover {
-    background: #1d6f42;
+    background-color: rgba(141, 198, 64, 0.15);
+    color: var(--cem-forest);
 }
 
 .export-btn:focus-visible {
-    outline: 2px solid #3498db;
+    outline: 2px solid var(--cem-cyan);
     outline-offset: 2px;
 }
 
 .export-btn--xlsx:focus-visible {
-    outline-color: #1d6f42;
+    outline-color: var(--cem-forest);
 }
 
 .export-btn svg {
     display: block;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .chart-container {
     position: relative;
-    height: 400px;
+    padding: 1.5rem;
+    height: 360px;
     width: 100%;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .chart-empty {
@@ -243,11 +394,15 @@ h1 {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #95a5a6;
+    color: var(--text-muted);
     font-style: italic;
     text-align: center;
     padding: 20px;
 }
+
+/* ===========================================
+   Chart "average" (KPI style)
+   =========================================== */
 
 .chart-average {
     display: flex;
@@ -255,108 +410,172 @@ h1 {
     align-items: center;
     justify-content: center;
     height: 100%;
-    padding: 20px;
+    padding: 0.5rem 0;
     text-align: center;
 }
 
 .chart-average__value {
-    font-size: 5em;
-    font-weight: 800;
-    color: #2c3e50;
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--foreground);
     line-height: 1;
+    letter-spacing: -0.02em;
 }
 
 .chart-average__unit {
-    font-size: 0.4em;
+    font-size: 0.45em;
     font-weight: 600;
-    color: #7f8c8d;
-    margin-left: 8px;
+    color: var(--text-muted);
+    margin-left: 0.375rem;
     vertical-align: middle;
 }
 
 .chart-average__count {
-    margin-top: 14px;
-    font-size: 1em;
-    color: #7f8c8d;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 400;
 }
+
+/* ===========================================
+   Loading / error
+   =========================================== */
 
 .loading {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 200px;
-    color: #7f8c8d;
-    font-size: 18px;
+    color: var(--text-muted);
+    font-size: 1rem;
 }
 
 .error {
-    background: #e74c3c;
+    background-color: var(--cem-red);
     color: white;
-    padding: 15px;
-    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
     text-align: center;
-    margin: 20px 0;
+    margin: 1.25rem 0;
 }
 
+/* ===========================================
+   Footer
+   =========================================== */
+
 .site-footer {
-    margin-top: 40px;
-    padding: 24px 20px;
+    margin-top: 2rem;
+    border-top: 1px solid var(--cem-gray-1);
+    background-color: transparent;
+}
+
+.site-footer__inner {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 1.5rem var(--content-px);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 1rem;
     flex-wrap: wrap;
-    color: #7f8c8d;
-    font-size: 0.9em;
-    border-top: 1px solid #e0e6e8;
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 .footer-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    color: #2c3e50;
+    gap: 0.5rem;
+    color: var(--foreground);
     text-decoration: none;
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-weight: 500;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .footer-link:hover {
-    background: #ecf0f1;
-    color: #3498db;
+    background-color: var(--cem-gray-1);
+    color: var(--cem-cyan);
 }
 
 .footer-link:focus-visible {
-    outline: 2px solid #3498db;
+    outline: 2px solid var(--cem-cyan);
     outline-offset: 2px;
 }
 
 .footer-link svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .footer-credit {
     text-align: right;
 }
 
-@media (max-width: 768px) {
+/* ===========================================
+   Responsive
+   =========================================== */
+
+@media (max-width: 900px) {
     .charts-container {
         grid-template-columns: 1fr;
     }
 
-    .chart-wrapper {
-        margin: 0 10px;
+    .chart-container {
+        height: 320px;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-header__top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
     }
 
-    h1 {
-        font-size: 2em;
+    .site-header__divider {
+        display: none;
     }
 
-    .year-btn {
-        padding: 10px 18px;
-        font-size: 14px;
+    .site-header h1 {
+        font-size: 1rem;
+    }
+
+    .site-header__filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .year-selector,
+    .program-selector {
+        flex-wrap: wrap;
+    }
+
+    .year-btn,
+    .program-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    #general-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .chart-actions {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 540px) {
+    .chart-average__value {
+        font-size: 2.75rem;
     }
 }

@@ -60,7 +60,7 @@
     "chartType": "pie"
   },
   "salaire-moyen": {
-    "label": "Si tu as obtenu un emploi, veux-tu nous dire le salaire horaire qu'on t'as offert.",
+    "label": "Si tu as obtenu un emploi, quel est ton salaire horaire ?",
     "chartType": "average",
     "unit": "$/h",
     "decimals": 2
