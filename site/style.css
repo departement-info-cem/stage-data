@@ -62,9 +62,14 @@ h1 {
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.program-btn:hover {
+.program-btn:hover:not(:disabled) {
     background: #d5dbdb;
     transform: translateY(-1px);
+}
+
+.program-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .program-btn.active {

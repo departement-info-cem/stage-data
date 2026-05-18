@@ -24,6 +24,7 @@ class DataVisualizationApp {
             await this.loadAllManifests();
             await this.loadAllData();
             this.currentYear = this.years[this.years.length - 1];
+            this.ensureValidProgram();
             this.renderSelectors();
             this.setupEventListeners();
             this.render();
@@ -300,6 +301,68 @@ class DataVisualizationApp {
         this.renderProgramSelector();
     }
 
+    hasAnyChartForProgram(program) {
+        const prev = this.currentProgram;
+        this.currentProgram = program;
+        try {
+            if (this.currentView === 'compare') return this.hasAnyCompareChart();
+            return this.hasAnyYearChart(this.currentYear);
+        } finally {
+            this.currentProgram = prev;
+        }
+    }
+
+    hasAnyYearChart(year) {
+        const manifest = this.manifests[year];
+        if (!manifest) return false;
+        const repondants = this.getRepondants(year);
+        for (const qid of manifest.questions) {
+            const q = this.schema.questions[qid];
+            if (!q) continue;
+            const data = this.getData(year, qid);
+            if (q.chartType === 'average') {
+                if (data && data.mean != null) return true;
+            } else if (data && data.length > 0 && repondants != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hasAnyCompareChart() {
+        const seen = new Set();
+        const allQuestions = [];
+        for (const year of this.years) {
+            for (const qid of this.manifests[year].questions) {
+                if (!seen.has(qid)) { seen.add(qid); allQuestions.push(qid); }
+            }
+        }
+        for (const qid of allQuestions) {
+            const q = this.schema.questions[qid];
+            if (!q) continue;
+            const years = this.years.filter((y) => {
+                if (!this.yearHasFullProgramData(y, qid)) return false;
+                const d = this.getData(y, qid);
+                if (!d) return false;
+                if (q.chartType === 'average') return d.mean != null;
+                return Array.isArray(d) && d.length > 0;
+            });
+            if (years.length >= 2) return true;
+        }
+        return false;
+    }
+
+    ensureValidProgram() {
+        if (this.hasAnyChartForProgram(this.currentProgram)) return;
+        const candidates = [PROGRAM_ALL, ...this.availablePrograms()];
+        for (const p of candidates) {
+            if (this.hasAnyChartForProgram(p)) {
+                this.currentProgram = p;
+                return;
+            }
+        }
+    }
+
     renderYearSelector() {
         const sel = document.querySelector('.year-selector');
         sel.innerHTML = '';
@@ -340,6 +403,7 @@ class DataVisualizationApp {
             btn.className = 'program-btn';
             btn.dataset.program = code;
             btn.textContent = label;
+            if (!this.hasAnyChartForProgram(code)) btn.disabled = true;
             if (this.currentProgram === code) {
                 btn.classList.add('active');
                 const color = this.programColor(code);
@@ -363,6 +427,7 @@ class DataVisualizationApp {
                 this.currentView = 'year';
                 this.currentYear = btn.dataset.year;
             }
+            this.ensureValidProgram();
             this.renderSelectors();
             this.render();
         });
@@ -480,14 +545,16 @@ class DataVisualizationApp {
             const q = this.schema.questions[qid];
             if (!q) continue;
 
-            const years = this.years.filter((y) => this.yearHasFullProgramData(y, qid));
+            const years = this.years.filter((y) => {
+                if (!this.yearHasFullProgramData(y, qid)) return false;
+                const d = this.getData(y, qid);
+                if (!d) return false;
+                if (q.chartType === 'average') return d.mean != null;
+                return Array.isArray(d) && d.length > 0;
+            });
+            if (years.length < 2) continue;
 
             if (q.chartType === 'average') {
-                const hasAny = years.some((y) => {
-                    const d = this.getData(y, qid);
-                    return d && d.mean != null;
-                });
-                if (!hasAny) continue;
                 const wrapper = this.createWrapper(qid, q.label);
                 container.appendChild(wrapper);
                 this.renderCompareAverage(qid, q, years);
