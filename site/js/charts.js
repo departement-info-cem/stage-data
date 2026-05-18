@@ -31,8 +31,13 @@ export function createAverageDisplay(canvasId, data, q) {
 }
 
 export function createBarChart(canvasId, data, repondants, schemaColors) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
     if (!data.length) return null;
+
+    const minHeightPerBar = 48;
+    const containerHeight = Math.max(400, data.length * minHeightPerBar);
+    canvas.parentElement.style.height = `${containerHeight}px`;
     const labels = data.map((d) => d.value);
     const values = data.map((d) => d.count);
     const colors = assignColors(labels, schemaColors);
