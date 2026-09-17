@@ -3,18 +3,25 @@ import { assignColors } from './colors.js';
 import {
     createAverageDisplay,
     createBarChart,
+    createCohortChart,
     createLineChart,
+    createPlacementBarChart,
     createPieChart,
     createSankeyChart,
 } from './charts.js';
 import {
+    cohortPrograms,
+    cohortTotalsAt,
+    cohortYearTotals,
     compareYearsForQuestion,
+    crossYearQuestions,
     getData,
     getRepondants,
     manifestSections,
     mergedSections,
     programColor,
     programLabel,
+    yearHasSurvey,
 } from './state-queries.js';
 import { escapeHTML } from './utils.js';
 
@@ -25,7 +32,7 @@ function createSectionHeader(title) {
     return header;
 }
 
-function createWrapper(qid, label, { wide = false } = {}) {
+function createWrapper(qid, label, { wide = false, note = null } = {}) {
     const wrapper = document.createElement('section');
     wrapper.className = wide ? 'chart-wrapper chart-wrapper--wide' : 'chart-wrapper';
     wrapper.id = `q-${qid}`;
@@ -46,11 +53,94 @@ function createWrapper(qid, label, { wide = false } = {}) {
                 </button>
             </div>
         </header>
+        ${note ? `<p class="chart-note">${escapeHTML(note)}</p>` : ''}
         <div class="chart-container">
             <canvas id="chart-${qid}" role="img" aria-label="${escapeHTML(label)}"></canvas>
         </div>
     `;
     return wrapper;
+}
+
+function buildCohortChartData(state, cohorts) {
+    const selected = cohortPrograms(state, cohorts);
+    if (selected.length === 0) return null;
+    const totals = cohorts.years.map((_, i) => cohortTotalsAt(cohorts, selected, i));
+
+    return {
+        years: cohorts.years,
+        forecast: cohorts.forecast,
+        areas: selected.map((p) => ({
+            label: programLabel(state, p),
+            color: programColor(state, p),
+            data: cohorts.byProgram[p].finissants,
+        })),
+        placed: {
+            label: 'Étudiants placés en stage',
+            data: totals.map((t) => (t ? t.places : null)),
+        },
+        rates: totals.map((t) => (t ? t.rate : null)),
+    };
+}
+
+function cohortNote(state, q, cohorts) {
+    const parts = q.note ? [q.note] : [];
+    if (state.currentView === 'compare') {
+        const forecastYears = cohorts.years.filter((_, i) => cohorts.forecast[i]);
+        if (forecastYears.length > 0) {
+            const liste = forecastYears.map((y) => `H${y}`).join(', ');
+            parts.push(`${liste} : chiffres prévisionnels, tracés en pointillés, dont le placement n'est pas encore connu.`);
+        }
+    } else {
+        const totals = cohortYearTotals(state, cohorts, state.currentYear);
+        if (totals && totals.forecast) {
+            parts.push(`H${state.currentYear} : chiffres prévisionnels.`);
+        }
+    }
+    return parts.join(' ');
+}
+
+function renderCohortSection(state, charts, container) {
+    const isCompare = state.currentView === 'compare';
+    const wrappers = [];
+
+    for (const { qid, q } of crossYearQuestions(state)) {
+        const cohorts = state.crossYearData[qid];
+        if (!cohorts || cohorts.years.length === 0) continue;
+        const canvasId = `chart-${qid}`;
+        let render;
+
+        if (isCompare) {
+            const chartData = buildCohortChartData(state, cohorts);
+            if (!chartData) continue;
+            render = () => {
+                const chart = createCohortChart(canvasId, chartData);
+                if (chart) charts.set(canvasId, chart);
+            };
+        } else {
+            const totals = cohortYearTotals(state, cohorts, state.currentYear);
+            if (!totals) continue;
+            render = () => {
+                const chart = createPlacementBarChart(canvasId, {
+                    label: `H${state.currentYear}`,
+                    color: programColor(state, state.currentProgram),
+                    ...totals,
+                });
+                if (chart) charts.set(canvasId, chart);
+            };
+        }
+
+        wrappers.push({
+            wrapper: createWrapper(qid, q.label, { wide: true, note: cohortNote(state, q, cohorts) }),
+            render,
+        });
+    }
+
+    if (wrappers.length === 0) return;
+    container.appendChild(createSectionHeader(isCompare ? 'Portrait des cohortes' : 'Portrait de la cohorte'));
+    for (const { wrapper, render } of wrappers) {
+        container.appendChild(wrapper);
+        render();
+    }
 }
 
 export function renderInfo(state) {
@@ -61,7 +151,9 @@ export function renderInfo(state) {
         : ` &nbsp;·&nbsp; <strong>Programme :</strong> ${escapeHTML(filterLabel)}`;
 
     if (state.currentView === 'compare') {
-        const lines = state.years.map((y) => {
+        // Seules les années sondées ont un nombre de répondants à annoncer ; les
+        // autres n'apparaissent que dans le portrait des cohortes.
+        const lines = state.years.filter((y) => yearHasSurvey(state, y)).map((y) => {
             const m = state.manifests[y];
             const periode = m.periode ? ` — ${escapeHTML(m.periode)}` : '';
             const rep = getRepondants(state, y);
@@ -77,7 +169,9 @@ export function renderInfo(state) {
     const m = state.manifests[state.currentYear];
     const periode = m.periode ? ` &nbsp;·&nbsp; <strong>Période :</strong> ${escapeHTML(m.periode)}` : '';
     const rep = getRepondants(state, state.currentYear);
-    if (rep == null) {
+    if (!yearHasSurvey(state, state.currentYear)) {
+        info.innerHTML = `<p><em>Aucun sondage pour ${state.currentYear}</em> — seul le portrait de la cohorte est disponible${filterChip}</p>`;
+    } else if (rep == null) {
         info.innerHTML = `<p><strong>Filtre :</strong> ${escapeHTML(filterLabel)} — <em>données non disponibles pour ${state.currentYear}</em>${periode}</p>`;
     } else {
         info.innerHTML = `<p><strong>Répondants :</strong> ${rep}${periode}${filterChip}</p>`;
@@ -93,6 +187,8 @@ export function renderYearView(state, charts) {
     const manifest = state.manifests[year];
     const repondants = getRepondants(state, year);
     const schemaColors = state.schema.colors;
+
+    renderCohortSection(state, charts, container);
 
     for (const section of manifestSections(manifest)) {
         const wrappers = [];
@@ -146,6 +242,8 @@ export function renderCompareView(state, charts) {
     container.innerHTML = '';
 
     const schemaColors = state.schema.colors;
+
+    renderCohortSection(state, charts, container);
 
     for (const section of mergedSections(state)) {
         const wrappers = [];

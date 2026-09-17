@@ -134,3 +134,72 @@ export function aggregateAverage(rows, programs, year, questionId) {
     }
     return result;
 }
+
+function parseCount(value) {
+    if (value == null) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    const num = parseInt(trimmed, 10);
+    return Number.isNaN(num) ? null : num;
+}
+
+function sumOrNull(values) {
+    let sum = 0;
+    for (const v of values) {
+        if (v == null) return null;
+        sum += v;
+    }
+    return sum;
+}
+
+export function aggregateCohorts(rows) {
+    const byYear = new Map();
+    const programs = [];
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const year = String((row && row.annee) || '').trim();
+        const program = String((row && row.programme) || '').trim().toLowerCase();
+        if (!year || !program) {
+            console.warn(`Ligne ${i + 2} ignorée dans cohortes.csv : année ou programme manquant`);
+            continue;
+        }
+        if (!programs.includes(program)) programs.push(program);
+
+        let entry = byYear.get(year);
+        if (!entry) {
+            entry = { forecast: false, byProgram: new Map() };
+            byYear.set(year, entry);
+        }
+        if (String(row.previsionnel || '').trim()) entry.forecast = true;
+        entry.byProgram.set(program, {
+            finissants: parseCount(row.finissants),
+            places: parseCount(row.places),
+        });
+    }
+
+    const years = Array.from(byYear.keys()).sort();
+    const result = {
+        years,
+        programs,
+        forecast: years.map((y) => byYear.get(y).forecast),
+        byProgram: {},
+        total: { finissants: [], places: [] },
+    };
+
+    for (const program of programs) {
+        result.byProgram[program] = { finissants: [], places: [] };
+    }
+    for (let i = 0; i < years.length; i++) {
+        const entry = byYear.get(years[i]);
+        for (const program of programs) {
+            const cell = entry.byProgram.get(program) || { finissants: null, places: null };
+            result.byProgram[program].finissants.push(cell.finissants);
+            result.byProgram[program].places.push(cell.places);
+        }
+        result.total.finissants.push(sumOrNull(programs.map((p) => result.byProgram[p].finissants[i])));
+        result.total.places.push(sumOrNull(programs.map((p) => result.byProgram[p].places[i])));
+    }
+
+    return result;
+}

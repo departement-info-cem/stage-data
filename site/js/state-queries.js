@@ -147,6 +147,75 @@ export function compareYearsForQuestion(state, qid) {
     });
 }
 
+export function crossYearQuestions(state) {
+    return Object.entries(state.schema.questions)
+        .filter(([, q]) => q.scope === 'cross-year')
+        .map(([qid, q]) => ({ qid, q }));
+}
+
+// Les programmes retenus par le filtre courant, dans l'ordre d'empilement du fichier.
+export function cohortPrograms(state, cohorts) {
+    if (state.currentProgram === PROGRAM_ALL) return cohorts.programs;
+    return cohorts.byProgram[state.currentProgram] ? [state.currentProgram] : [];
+}
+
+// Additionne les programmes retenus pour une année. `places` (et donc `rate`) vaut
+// null dès qu'un programme n'a pas encore sa donnée de placement.
+export function cohortTotalsAt(cohorts, programs, index) {
+    if (programs.length === 0 || index < 0 || index >= cohorts.years.length) return null;
+    let finissants = 0;
+    let places = 0;
+    let placesKnown = true;
+    for (const p of programs) {
+        const f = cohorts.byProgram[p].finissants[index];
+        const pl = cohorts.byProgram[p].places[index];
+        if (f == null) return null;
+        finissants += f;
+        if (pl == null) placesKnown = false;
+        else places += pl;
+    }
+    return {
+        finissants,
+        places: placesKnown ? places : null,
+        rate: placesKnown && finissants ? (places / finissants) * 100 : null,
+        forecast: cohorts.forecast[index],
+    };
+}
+
+export function cohortYearTotals(state, cohorts, year) {
+    return cohortTotalsAt(cohorts, cohortPrograms(state, cohorts), cohorts.years.indexOf(String(year)));
+}
+
+// Une année n'a de contenu de sondage que si son manifeste déclare des questions ;
+// les autres n'existent que par les données transversales.
+export function yearHasSurvey(state, year) {
+    return manifestQuestionIds(state.manifests[year]).length > 0;
+}
+
+// Les années à présenter : celles du sondage plus celles des données transversales.
+export function allDisplayYears(state) {
+    const years = new Set(state.years.map(String));
+    for (const { qid } of crossYearQuestions(state)) {
+        const cohorts = state.crossYearData && state.crossYearData[qid];
+        if (cohorts) for (const y of cohorts.years) years.add(String(y));
+    }
+    return Array.from(years).sort();
+}
+
+// `year` restreint la recherche à cette année ; sans elle, toute la série compte.
+export function hasAnyCrossYearChart(state, year = null) {
+    for (const { qid } of crossYearQuestions(state)) {
+        const cohorts = state.crossYearData && state.crossYearData[qid];
+        if (!cohorts || cohorts.years.length === 0) continue;
+        if (year != null) {
+            if (cohortYearTotals(state, cohorts, year)) return true;
+            continue;
+        }
+        if (cohortPrograms(state, cohorts).length > 0) return true;
+    }
+    return false;
+}
+
 export function hasAnyCompareChart(state) {
     for (const qid of allCompareQuestions(state)) {
         if (compareYearsForQuestion(state, qid).length >= 2) return true;
@@ -154,20 +223,42 @@ export function hasAnyCompareChart(state) {
     return false;
 }
 
-export function hasAnyChartForProgram(state, program) {
+function forProgram(state, program, fn) {
     const prev = state.currentProgram;
     state.currentProgram = program;
     try {
-        if (state.currentView === 'compare') return hasAnyCompareChart(state);
-        return hasAnyYearChart(state, state.currentYear);
+        return fn();
     } finally {
         state.currentProgram = prev;
     }
 }
 
+// Les réponses au sondage seules : c'est ce qui rend un filtre intéressant par défaut.
+export function hasAnySurveyChartForProgram(state, program) {
+    return forProgram(state, program, () => (state.currentView === 'compare'
+        ? hasAnyCompareChart(state)
+        : hasAnyYearChart(state, state.currentYear)));
+}
+
+// Tout ce qui s'affiche, portrait des cohortes compris : c'est ce qui rend un
+// filtre cliquable, même quand le sondage n'a pas de données comparables.
+export function hasAnyChartForProgram(state, program) {
+    return forProgram(state, program, () => (state.currentView === 'compare'
+        ? hasAnyCrossYearChart(state) || hasAnyCompareChart(state)
+        : hasAnyCrossYearChart(state, state.currentYear) || hasAnyYearChart(state, state.currentYear)));
+}
+
 export function ensureValidProgram(state) {
-    if (hasAnyChartForProgram(state, state.currentProgram)) return;
-    const candidates = [PROGRAM_ALL, ...availablePrograms(state)];
+    // Un programme choisi par l'utilisateur (clic ou lien partagé) tient tant qu'il
+    // reste quelque chose à montrer ; sinon on retombe sur le meilleur filtre possible.
+    if (state.programExplicit && hasAnyChartForProgram(state, state.currentProgram)) return;
+    const candidates = [state.currentProgram, PROGRAM_ALL, ...availablePrograms(state)];
+    for (const p of candidates) {
+        if (hasAnySurveyChartForProgram(state, p)) {
+            state.currentProgram = p;
+            return;
+        }
+    }
     for (const p of candidates) {
         if (hasAnyChartForProgram(state, p)) {
             state.currentProgram = p;

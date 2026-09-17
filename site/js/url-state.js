@@ -10,9 +10,7 @@ export function readUrlState() {
 
 export function writeUrlState(state) {
     const params = new URLSearchParams(window.location.search);
-    const defaultYear = state.years && state.years.length
-        ? String(state.years[state.years.length - 1])
-        : null;
+    const defaultYear = state.defaultYear != null ? String(state.defaultYear) : null;
     if (state.currentView === 'compare') {
         params.set('view', 'compare');
     } else if (state.currentYear && String(state.currentYear) !== defaultYear) {
@@ -49,6 +47,7 @@ export function applyUrlStateToApp(state) {
         }
         if (programs.has(program)) {
             state.currentProgram = program;
+            state.programExplicit = true;
         }
     }
 }

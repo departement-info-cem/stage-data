@@ -1,5 +1,5 @@
 import { fetchJSON } from './utils.js';
-import { aggregateAverage, aggregateMultiChoice, aggregateSankey } from './aggregator.js';
+import { aggregateAverage, aggregateCohorts, aggregateMultiChoice, aggregateSankey } from './aggregator.js';
 import { manifestQuestionIds } from './state-queries.js';
 
 export async function loadSchema() {
@@ -87,6 +87,42 @@ async function loadQuestionCSV({ year, questionId, manifest, schema, aliasLookup
                 } else {
                     resolve(aggregateMultiChoice(results.data, programs, aliasLookup));
                 }
+            },
+            error: reject,
+        });
+    });
+}
+
+export async function loadCrossYearData({ schema }) {
+    const data = {};
+    const rawRows = {};
+    for (const [qid, q] of Object.entries(schema.questions)) {
+        if (q.scope !== 'cross-year') continue;
+        try {
+            const { aggregated, rows } = await loadCrossYearCSV(qid, q);
+            data[qid] = aggregated;
+            rawRows[qid] = rows;
+        } catch (e) {
+            console.warn(`Impossible de charger ${qid}.csv : ${e.message}`);
+        }
+    }
+    return { data, rawRows };
+}
+
+async function loadCrossYearCSV(questionId, q) {
+    const response = await fetch(`static/data/${questionId}.csv`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    return new Promise((resolve, reject) => {
+        Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                if (q.chartType !== 'cohortes') {
+                    reject(new Error(`Type de graphique transversal inconnu : ${q.chartType}`));
+                    return;
+                }
+                resolve({ aggregated: aggregateCohorts(results.data), rows: results.data });
             },
             error: reject,
         });

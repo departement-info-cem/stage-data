@@ -4,6 +4,7 @@ import {
     hasAnyChartForProgram,
     programColor,
     programLabel,
+    yearHasSurvey,
 } from './state-queries.js';
 
 export function renderYearSelector(state) {
@@ -14,6 +15,9 @@ export function renderYearSelector(state) {
         btn.className = 'year-btn';
         btn.dataset.year = year;
         btn.textContent = year;
+        if (!yearHasSurvey(state, year)) {
+            btn.title = `${year} — portrait de la cohorte seulement, pas de sondage`;
+        }
         if (state.currentView === 'year' && year === state.currentYear) {
             btn.classList.add('active');
         }
