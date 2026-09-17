@@ -1,5 +1,5 @@
-import { assignColors } from './colors.js';
-import { DEFAULT_COLOR } from './constants.js';
+import { assignColors, withAlpha } from './colors.js';
+import { DEFAULT_COLOR, PLACEMENT_COLOR } from './constants.js';
 import { escapeHTML } from './utils.js';
 
 const TOOLTIP_BASE = {
@@ -268,6 +268,304 @@ export function createLineChart(canvasId, years, datasets, options = {}) {
                 x: {
                     title: { display: true, text: 'Année' },
                     ticks: { color: '#7f8c8d', font: { size: 16 } },
+                },
+            },
+            animation: ANIMATION,
+        },
+    });
+}
+
+export function formatRate(rate) {
+    if (rate == null) return '—';
+    const rounded = Math.round(rate * 10) / 10;
+    const decimals = Number.isInteger(rounded) ? 0 : 1;
+    return `${rounded.toLocaleString('fr-CA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} %`;
+}
+
+const forecastBandPlugin = {
+    id: 'forecastBand',
+    beforeDatasetsDraw(chart, _args, opts) {
+        const flags = opts && opts.forecast;
+        if (!Array.isArray(flags)) return;
+        const first = flags.indexOf(true);
+        if (first <= 0) return;
+
+        const xScale = chart.scales.x;
+        const { chartArea, ctx } = chart;
+        const from = xScale.getPixelForValue(first - 1);
+        const to = xScale.getPixelForValue(flags.length - 1);
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(12, 52, 85, 0.04)';
+        ctx.fillRect(from, chartArea.top, to - from, chartArea.bottom - chartArea.top);
+        ctx.font = '600 13px Geist, system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#7f8c8d';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(opts.label || 'Prévisionnel', to - 8, chartArea.top + 8);
+        ctx.restore();
+    },
+};
+
+export function createCohortChart(canvasId, { years, forecast, areas, placed, rates }) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !years.length) return null;
+    canvas.parentElement.style.height = '440px';
+
+    const dashForecastSegment = (ctx) => (forecast[ctx.p1DataIndex] ? [6, 5] : undefined);
+    const pointRadius = (ctx) => (forecast[ctx.dataIndex] ? 4 : 5);
+
+    const datasets = areas.map((area, idx) => ({
+        label: area.label,
+        data: area.data,
+        stack: 'finissants',
+        borderColor: area.color,
+        backgroundColor: withAlpha(area.color, 0.18),
+        borderWidth: 2,
+        fill: idx === 0 ? 'origin' : '-1',
+        tension: 0.25,
+        pointRadius,
+        pointHoverRadius: 7,
+        pointBackgroundColor: (ctx) => (forecast[ctx.dataIndex] ? '#ffffff' : area.color),
+        pointBorderColor: area.color,
+        pointBorderWidth: 2,
+        segment: { borderDash: dashForecastSegment },
+        datalabels: { display: false },
+    }));
+
+    const placedIndex = datasets.length;
+    datasets.push({
+        label: placed.label,
+        data: placed.data,
+        stack: 'places',
+        borderColor: PLACEMENT_COLOR,
+        backgroundColor: PLACEMENT_COLOR,
+        borderWidth: 2,
+        fill: false,
+        tension: 0.25,
+        spanGaps: false,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: PLACEMENT_COLOR,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        datalabels: {
+            anchor: 'center',
+            // Angles datalabels : 90 = sous le point, 45 = bas-droite, 135 = bas-gauche.
+            // Les points aux extrémités décalent leur étiquette vers l'intérieur pour
+            // ne pas déborder sur les graduations.
+            align: (ctx) => {
+                if (ctx.dataIndex === 0) return 45;
+                if (ctx.dataIndex === years.length - 1) return 135;
+                return 90;
+            },
+            offset: 8,
+            clamp: true,
+            color: '#0C3455',
+            backgroundColor: 'rgba(255, 255, 255, 0.88)',
+            borderRadius: 4,
+            padding: { top: 3, bottom: 3, left: 6, right: 6 },
+            font: { size: 14, weight: '600' },
+            display: (ctx) => rates[ctx.dataIndex] != null,
+            formatter: (_v, ctx) => formatRate(rates[ctx.dataIndex]),
+        },
+    });
+
+    const ctx = canvas.getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        plugins: [ChartDataLabels, forecastBandPlugin],
+        data: { labels: years, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            layout: { padding: { top: 8, right: 8 } },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 15, usePointStyle: true, color: '#2c3e50', font: { size: 16 } },
+                },
+                tooltip: {
+                    ...TOOLTIP_BASE,
+                    callbacks: {
+                        title: (items) => {
+                            const i = items[0].dataIndex;
+                            return forecast[i] ? `${years[i]} (prévisionnel)` : String(years[i]);
+                        },
+                        label: (c) => {
+                            const v = c.parsed.y;
+                            if (v == null) return null;
+                            if (c.datasetIndex === placedIndex) {
+                                const rate = rates[c.dataIndex];
+                                return `${c.dataset.label} : ${v}${rate != null ? ` — ${formatRate(rate)}` : ''}`;
+                            }
+                            return `${c.dataset.label} : ${v} finissant${v > 1 ? 's' : ''}`;
+                        },
+                        // Le total n'a d'intérêt que si plusieurs programmes s'empilent.
+                        footer: (items) => {
+                            if (areas.length < 2) return '';
+                            const i = items[0].dataIndex;
+                            let total = 0;
+                            for (const area of areas) {
+                                if (area.data[i] == null) return '';
+                                total += area.data[i];
+                            }
+                            return `Total : ${total} finissant${total > 1 ? 's' : ''}`;
+                        },
+                    },
+                },
+                forecastBand: { forecast, label: 'Prévisionnel' },
+            },
+            scales: {
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: "Nombre d'étudiants" },
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: { color: '#7f8c8d', precision: 0, font: { size: 16 } },
+                },
+                x: {
+                    title: { display: true, text: 'Année' },
+                    grid: { display: false },
+                    ticks: { color: '#7f8c8d', font: { size: 16 } },
+                },
+            },
+            animation: ANIMATION,
+        },
+    });
+}
+
+const forecastTagPlugin = {
+    id: 'forecastTag',
+    afterDraw(chart, _args, opts) {
+        if (!opts || !opts.display) return;
+        const { chartArea, ctx } = chart;
+        ctx.save();
+        ctx.font = '600 13px Geist, system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#7f8c8d';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(opts.label || 'Prévisionnel', chartArea.right, chartArea.top);
+        ctx.restore();
+    },
+};
+
+export function createPlacementBarChart(canvasId, { label, color, finissants, places, rate, forecast }) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || finissants == null) return null;
+    // Assez haut pour la barre de 56 px plus l'axe, son titre et une légende qui
+    // passe sur deux lignes en écran étroit.
+    canvas.parentElement.style.height = '260px';
+
+    // Arrondi à la dizaine supérieure pour des graduations rondes, avec toujours
+    // un peu d'air au bout de la barre pour son étiquette.
+    const step = finissants > 40 ? 10 : 5;
+    const axisMax = Math.ceil((finissants * 1.08) / step) * step;
+    const ctx = canvas.getContext('2d');
+    const LABEL_FONT = "600 16px Geist, system-ui, -apple-system, sans-serif";
+    const placedLabel = places == null
+        ? ''
+        : `${places} sur ${finissants}${rate != null ? ` — ${formatRate(rate)}` : ''}`;
+
+    // Largeur réelle du texte plus son fond : l'étiquette ne se pose dans la barre
+    // des placés que si elle y tient, sinon elle sort à droite en encre foncée.
+    ctx.font = LABEL_FONT;
+    const labelWidth = ctx.measureText(placedLabel).width + 24;
+    const fitsInside = (dlCtx) => {
+        const area = dlCtx.chart.chartArea;
+        if (!area) return false;
+        return (places / axisMax) * (area.right - area.left) > labelWidth;
+    };
+
+    const datasets = [{
+        label: 'Finissants',
+        data: [finissants],
+        grouped: false,
+        backgroundColor: withAlpha(color, 0.18),
+        borderColor: color,
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+        barThickness: 56,
+        // Sans donnée de placement (année prévisionnelle), cette barre est seule :
+        // elle porte alors sa propre valeur, posée à l'intérieur de son extrémité.
+        datalabels: places != null ? { display: false } : {
+            anchor: 'end',
+            align: 'left',
+            offset: 12,
+            clamp: true,
+            color: '#0C3455',
+            font: { size: 16, weight: '600' },
+            formatter: (v) => `${v} finissant${v > 1 ? 's' : ''}`,
+        },
+    }];
+
+    if (places != null) {
+        datasets.push({
+            label: 'Étudiants placés en stage',
+            data: [places],
+            grouped: false,
+            backgroundColor: PLACEMENT_COLOR,
+            borderColor: PLACEMENT_COLOR,
+            borderWidth: 0,
+            borderRadius: 6,
+            borderSkipped: false,
+            barThickness: 28,
+            datalabels: {
+                anchor: 'end',
+                align: (c) => (fitsInside(c) ? 'left' : 'right'),
+                offset: 10,
+                clamp: true,
+                color: (c) => (fitsInside(c) ? '#ffffff' : '#0C3455'),
+                font: { size: 16, weight: '600' },
+                formatter: () => placedLabel,
+            },
+        });
+    }
+    return new Chart(ctx, {
+        type: 'bar',
+        plugins: [ChartDataLabels, forecastTagPlugin],
+        data: { labels: [label || ''], datasets },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 20, right: 8 } },
+            plugins: {
+                legend: {
+                    // Une seule série : le titre de la carte la nomme déjà.
+                    display: datasets.length > 1,
+                    position: 'bottom',
+                    labels: { padding: 15, usePointStyle: true, color: '#2c3e50', font: { size: 16 } },
+                },
+                forecastTag: { display: !!forecast, label: 'Prévisionnel' },
+                tooltip: {
+                    ...TOOLTIP_BASE,
+                    callbacks: {
+                        title: () => (forecast ? `${label} (prévisionnel)` : String(label || '')),
+                        label: (c) => {
+                            const v = c.parsed.x;
+                            if (c.datasetIndex === 0) return `${c.dataset.label} : ${v}`;
+                            return `${c.dataset.label} : ${v}${rate != null ? ` — ${formatRate(rate)}` : ''}`;
+                        },
+                        footer: () => {
+                            if (places == null) return '';
+                            const reste = finissants - places;
+                            if (reste === 0) return 'Cohorte entièrement placée';
+                            return `${reste} sans stage`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                y: { display: false, grid: { display: false } },
+                x: {
+                    beginAtZero: true,
+                    max: axisMax,
+                    title: { display: true, text: "Nombre d'étudiants" },
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: { color: '#7f8c8d', precision: 0, font: { size: 16 } },
                 },
             },
             animation: ANIMATION,

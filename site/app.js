@@ -1,8 +1,8 @@
 import { PROGRAM_ALL } from './js/constants.js';
-import { loadAllData, loadManifests, loadSchema, loadYears } from './js/data-loader.js';
+import { loadAllData, loadCrossYearData, loadManifests, loadSchema, loadYears } from './js/data-loader.js';
 import { handleExport } from './js/export.js';
 import { renderProgramSelector, renderSelectors } from './js/selectors.js';
-import { ensureValidProgram } from './js/state-queries.js';
+import { allDisplayYears, ensureValidProgram } from './js/state-queries.js';
 import { applyUrlStateToApp, writeUrlState } from './js/url-state.js';
 import { renderCompareView, renderYearView } from './js/views.js';
 
@@ -13,12 +13,16 @@ class DataVisualizationApp {
             programs: {},
             aliasLookup: new Map(),
             years: [],
+            defaultYear: null,
             manifests: {},
             data: {},
             rawRows: {},
+            crossYearData: {},
+            crossYearRawRows: {},
             currentYear: null,
             currentView: 'year',
             currentProgram: PROGRAM_ALL,
+            programExplicit: false,
         };
         this.charts = new Map();
         this.init();
@@ -44,7 +48,19 @@ class DataVisualizationApp {
             this.state.data = data;
             this.state.rawRows = rawRows;
 
-            this.state.currentYear = this.state.years[this.state.years.length - 1];
+            const crossYear = await loadCrossYearData({ schema: this.state.schema });
+            this.state.crossYearData = crossYear.data;
+            this.state.crossYearRawRows = crossYear.rawRows;
+
+            // Le sondage fixe l'année d'accueil ; les données transversales peuvent
+            // ajouter des années au sélecteur, avec un manifeste vide.
+            this.state.defaultYear = this.state.years[this.state.years.length - 1];
+            this.state.years = allDisplayYears(this.state);
+            for (const year of this.state.years) {
+                if (!this.state.manifests[year]) this.state.manifests[year] = {};
+            }
+
+            this.state.currentYear = this.state.defaultYear;
             applyUrlStateToApp(this.state);
             ensureValidProgram(this.state);
             writeUrlState(this.state);
@@ -61,8 +77,9 @@ class DataVisualizationApp {
 
     resetFilters() {
         this.state.currentView = 'year';
-        this.state.currentYear = this.state.years[this.state.years.length - 1];
+        this.state.currentYear = this.state.defaultYear;
         this.state.currentProgram = PROGRAM_ALL;
+        this.state.programExplicit = false;
         ensureValidProgram(this.state);
         writeUrlState(this.state);
         this.clearUrlHash();
@@ -99,6 +116,7 @@ class DataVisualizationApp {
                 const btn = e.target.closest('.program-btn');
                 if (!btn) return;
                 this.state.currentProgram = btn.dataset.program;
+                this.state.programExplicit = true;
                 writeUrlState(this.state);
                 this.clearUrlHash();
                 renderProgramSelector(this.state);

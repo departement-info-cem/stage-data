@@ -1,5 +1,5 @@
 import { PROGRAM_ALL } from './constants.js';
-import { getData, getRepondants } from './state-queries.js';
+import { cohortPrograms, getData, getRepondants, programLabel } from './state-queries.js';
 import { triggerDownload } from './utils.js';
 
 export function handleExport(state, action, qid) {
@@ -17,6 +17,10 @@ function buildExportData(state, qid) {
     const sheetName = (q && q.label) || qid;
     const programSuffix = state.currentProgram === PROGRAM_ALL ? '' : `-${state.currentProgram}`;
 
+    if (q && q.scope === 'cross-year') {
+        return buildCohortExport(state, qid, sheetName, programSuffix);
+    }
+
     if (state.currentView === 'year') {
         return buildRawYearExport(state, qid, sheetName, programSuffix);
     }
@@ -26,6 +30,53 @@ function buildExportData(state, qid) {
     }
 
     return buildMultiChoiceCompareExport(state, qid, sheetName, programSuffix);
+}
+
+function buildCohortExport(state, qid, sheetName, programSuffix) {
+    const cohorts = state.crossYearData[qid];
+    const empty = { filename: `${qid}${programSuffix}`, sheetName, headers: [], rows: [] };
+    if (!cohorts) return empty;
+
+    const selected = cohortPrograms(state, cohorts);
+    if (selected.length === 0) return empty;
+
+    // En vue année, on n'exporte que l'année consultée ; en comparatif, toute la série.
+    const years = state.currentView === 'year'
+        ? cohorts.years.filter((y) => y === String(state.currentYear))
+        : cohorts.years;
+    if (years.length === 0) return empty;
+
+    const detailed = selected.length > 1;
+    const headers = ['Année'];
+    if (detailed) {
+        for (const p of selected) {
+            const label = programLabel(state, p);
+            headers.push(`Finissants — ${label}`, `Placés — ${label}`);
+        }
+    }
+    headers.push('Finissants', 'Étudiants placés en stage', 'Taux de placement (%)', 'Prévisionnel');
+
+    const rows = years.map((year) => {
+        const i = cohorts.years.indexOf(year);
+        const row = [year];
+        let finissants = 0;
+        let places = 0;
+        let placesKnown = true;
+        for (const p of selected) {
+            const f = cohorts.byProgram[p].finissants[i];
+            const pl = cohorts.byProgram[p].places[i];
+            if (detailed) row.push(f, pl);
+            finissants += f || 0;
+            if (pl == null) placesKnown = false;
+            else places += pl;
+        }
+        const rate = placesKnown && finissants ? +((places / finissants) * 100).toFixed(1) : null;
+        row.push(finissants, placesKnown ? places : null, rate, cohorts.forecast[i] ? 'oui' : '');
+        return row;
+    });
+
+    const yearSuffix = state.currentView === 'year' ? `-${state.currentYear}` : '';
+    return { filename: `${qid}${yearSuffix}${programSuffix}`, sheetName, headers, rows };
 }
 
 function buildMultiChoiceCompareExport(state, qid, sheetName, programSuffix) {

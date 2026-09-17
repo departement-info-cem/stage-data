@@ -1,4 +1,10 @@
 {
+  "cohortes": {
+    "label": "Nombre de finissants et placement en stage",
+    "note": "Cohorte complète du programme, et non les seuls répondants au sondage.",
+    "chartType": "cohortes",
+    "scope": "cross-year"
+  },
   "techno": {
     "label": "Quels types de technologies as-tu développées pendant ton stage ?",
     "chartType": "bar"
@@ -100,6 +106,9 @@
   "job-universite-sankey": {
     "label": "Relation entre l'offre d'emploi reçue et l'intention de poursuivre à l'université",
     "chartType": "sankey",
-    "columns": ["Offre d'emploi reçue", "Études universitaires l'an prochain"]
+    "columns": [
+      "Offre d'emploi reçue",
+      "Études universitaires l'an prochain"
+    ]
   }
 }
