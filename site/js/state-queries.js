@@ -186,6 +186,116 @@ export function cohortYearTotals(state, cohorts, year) {
     return cohortTotalsAt(cohorts, cohortPrograms(state, cohorts), cohorts.years.indexOf(String(year)));
 }
 
+// Progression cumulative du placement d'une cohorte, mois par mois, pour les
+// programmes retenus. Un mois ne compte que si tous les programmes retenus l'ont
+// renseigné : le cumul s'arrête au premier mois manquant, car on ne peut pas
+// cumuler par-dessus un trou.
+export function cohortProgressAt(cohorts, programs, index) {
+    if (programs.length === 0 || index < 0 || index >= cohorts.years.length) return null;
+
+    const cells = [];
+    let finissants = 0;
+    for (const p of programs) {
+        const source = cohorts.byProgram[p];
+        const f = source.finissants[index];
+        if (f == null) return null;
+        finissants += f;
+        cells.push({
+            program: p,
+            mensuel: source.mensuel[index] || [],
+            moisInconnu: source.moisInconnu[index],
+            complet: source.complet[index],
+        });
+    }
+
+    const monthCount = cells[0].mensuel.length;
+    const series = cells.map((c) => ({
+        program: c.program,
+        mensuel: new Array(monthCount).fill(null),
+        cumul: new Array(monthCount).fill(null),
+    }));
+    // Les cohortes d'avant le suivi mensuel n'ont qu'un total : on relie zéro à ce
+    // total par une droite, de l'été à mars, plutôt que de laisser un mur en fin de
+    // saison. Seul le point d'arrivée est une mesure ; le graphique trace ces
+    // cohortes en pointillés, n'étiquette que mars et le dit dans sa note.
+    const undetermined = cells.some((c) => c.moisInconnu != null);
+    let lastKnownIndex = -1;
+
+    if (undetermined) {
+        lastKnownIndex = monthCount - 1;
+        cells.forEach((c, k) => {
+            const total = c.mensuel.reduce((acc, v) => acc + (v || 0), 0) + (c.moisInconnu || 0);
+            for (let m = 0; m < monthCount; m++) {
+                series[k].cumul[m] = Math.round((total * m) / lastKnownIndex);
+            }
+        });
+    } else {
+        const running = cells.map(() => 0);
+        for (let m = 0; m < monthCount; m++) {
+            if (cells.some((c) => c.mensuel[m] == null)) break;
+            cells.forEach((c, k) => {
+                running[k] += c.mensuel[m];
+                series[k].mensuel[m] = c.mensuel[m];
+                series[k].cumul[m] = running[k];
+            });
+            lastKnownIndex = m;
+        }
+    }
+
+    const totals = new Array(monthCount).fill(null);
+    for (let m = 0; m <= lastKnownIndex; m++) {
+        totals[m] = series.reduce((acc, s) => acc + s.cumul[m], 0);
+    }
+
+    const places = lastKnownIndex >= 0 ? totals[lastKnownIndex] : null;
+    return {
+        finissants,
+        series,
+        totals,
+        places,
+        rate: places != null && finissants ? (places / finissants) * 100 : null,
+        lastKnownIndex,
+        complete: cells.every((c) => c.complet),
+        undetermined,
+        forecast: cohorts.forecast[index],
+    };
+}
+
+export function cohortYearProgress(state, cohorts, year) {
+    return cohortProgressAt(cohorts, cohortPrograms(state, cohorts), cohorts.years.indexOf(String(year)));
+}
+
+// Les données d'une question transversale, qu'elle ait son fichier ou qu'elle
+// relise celui d'une autre (« derivedFrom »).
+export function crossYearDataFor(state, qid) {
+    const q = state.schema.questions[qid];
+    const source = (q && q.derivedFrom) || qid;
+    return state.crossYearData[source] || null;
+}
+
+// Une courbe par cohorte, en part de la cohorte placée à la fin de chaque mois :
+// c'est ce qui rend les années comparables malgré leurs effectifs différents.
+export function cohortPaceSeries(state, cohorts) {
+    const programs = cohortPrograms(state, cohorts);
+    if (programs.length === 0) return [];
+    const series = [];
+    cohorts.years.forEach((year, i) => {
+        const p = cohortProgressAt(cohorts, programs, i);
+        if (!p || p.lastKnownIndex < 0 || !p.finissants) return;
+        series.push({
+            year,
+            finissants: p.finissants,
+            cumul: p.totals,
+            pct: p.totals.map((v) => (v == null ? null : +((v / p.finissants) * 100).toFixed(1))),
+            lastKnownIndex: p.lastKnownIndex,
+            interpolated: p.undetermined,
+            complete: p.complete,
+            forecast: p.forecast,
+        });
+    });
+    return series;
+}
+
 // Une année n'a de contenu de sondage que si son manifeste déclare des questions ;
 // les autres n'existent que par les données transversales.
 export function yearHasSurvey(state, year) {

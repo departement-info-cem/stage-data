@@ -5,6 +5,13 @@
     "chartType": "cohortes",
     "scope": "cross-year"
   },
+  "cohortes-rythme": {
+    "label": "Rythme de placement au fil de la saison",
+    "note": "Part de la cohorte déjà placée à la fin de chaque mois, d'une année à l'autre.",
+    "chartType": "cohortes-rythme",
+    "scope": "cross-year",
+    "derivedFrom": "cohortes"
+  },
   "techno": {
     "label": "Quels types de technologies as-tu développées pendant ton stage ?",
     "chartType": "bar"

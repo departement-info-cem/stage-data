@@ -1,5 +1,5 @@
-import { PROGRAM_ALL } from './constants.js';
-import { cohortPrograms, getData, getRepondants, programLabel } from './state-queries.js';
+import { PLACEMENT_MONTHS, PROGRAM_ALL } from './constants.js';
+import { cohortPaceSeries, cohortPrograms, cohortYearProgress, crossYearDataFor, getData, getRepondants, programLabel } from './state-queries.js';
 import { triggerDownload } from './utils.js';
 
 export function handleExport(state, action, qid) {
@@ -18,7 +18,12 @@ function buildExportData(state, qid) {
     const programSuffix = state.currentProgram === PROGRAM_ALL ? '' : `-${state.currentProgram}`;
 
     if (q && q.scope === 'cross-year') {
-        return buildCohortExport(state, qid, sheetName, programSuffix);
+        if (q.chartType === 'cohortes-rythme') {
+            return buildCohortPaceExport(state, qid, sheetName, programSuffix);
+        }
+        return state.currentView === 'year'
+            ? buildCohortYearExport(state, qid, sheetName, programSuffix)
+            : buildCohortExport(state, qid, sheetName, programSuffix);
     }
 
     if (state.currentView === 'year') {
@@ -32,6 +37,77 @@ function buildExportData(state, qid) {
     return buildMultiChoiceCompareExport(state, qid, sheetName, programSuffix);
 }
 
+// Le rythme comparé s'exporte en tableau : une ligne par mois, deux colonnes par
+// cohorte. Les mois interpolés restent vides : l'export ne porte que du mesuré.
+function buildCohortPaceExport(state, qid, sheetName, programSuffix) {
+    const filename = `${qid}${programSuffix}`;
+    const empty = { filename, sheetName, headers: [], rows: [] };
+    const cohorts = crossYearDataFor(state, qid);
+    if (!cohorts) return empty;
+    const series = cohortPaceSeries(state, cohorts);
+    if (series.length === 0) return empty;
+
+    const mesure = (s, i) => (s.interpolated && i !== s.lastKnownIndex ? null : i);
+    const headers = ['Mois'];
+    for (const s of series) headers.push(`H${s.year} — placés`, `H${s.year} (%)`);
+    const rows = PLACEMENT_MONTHS.map((m, i) => {
+        const row = [m.label];
+        for (const s of series) {
+            const k = mesure(s, i);
+            row.push(k == null ? null : s.cumul[k], k == null ? null : s.pct[k]);
+        }
+        return row;
+    });
+    return { filename, sheetName, headers, rows };
+}
+
+// En vue année, l'export suit le graphique : une ligne par mois de la saison, avec
+// les stages obtenus du mois, le cumul et le taux atteint. Une cohorte sans détail
+// mensuel n'a qu'une ligne, « Mois inconnu », plutôt que des zéros inventés.
+function buildCohortYearExport(state, qid, sheetName, programSuffix) {
+    const year = state.currentYear;
+    const filename = `${qid}-${year}${programSuffix}`;
+    const empty = { filename, sheetName, headers: [], rows: [] };
+    const cohorts = state.crossYearData[qid];
+    if (!cohorts) return empty;
+    const progress = cohortYearProgress(state, cohorts, year);
+    if (!progress) return empty;
+
+    const detailed = progress.series.length > 1;
+    const headers = ['Mois'];
+    if (detailed) {
+        for (const s of progress.series) headers.push(`Stages obtenus — ${programLabel(state, s.program)}`);
+    }
+    headers.push('Stages obtenus', 'Cumulatif', 'Finissants', 'Taux de placement (%)');
+
+    const rateOf = (cumul) => (progress.finissants
+        ? +((cumul / progress.finissants) * 100).toFixed(1)
+        : null);
+
+    const rows = [];
+    if (progress.undetermined) {
+        const i = progress.lastKnownIndex;
+        const row = ['Mois inconnu'];
+        if (detailed) for (const s of progress.series) row.push(s.cumul[i]);
+        const cumul = progress.totals[i];
+        row.push(cumul, cumul, progress.finissants, rateOf(cumul));
+        rows.push(row);
+    } else {
+        PLACEMENT_MONTHS.forEach((m, i) => {
+            if (progress.totals[i] == null) return;
+            const row = [m.label];
+            if (detailed) for (const s of progress.series) row.push(s.mensuel[i]);
+            const duMois = progress.series.reduce((acc, s) => acc + (s.mensuel[i] || 0), 0);
+            row.push(duMois, progress.totals[i], progress.finissants, rateOf(progress.totals[i]));
+            rows.push(row);
+        });
+    }
+    if (rows.length === 0) return empty;
+
+    return { filename, sheetName, headers, rows };
+}
+
+// En vue comparative : une ligne par année, finissants et placement final.
 function buildCohortExport(state, qid, sheetName, programSuffix) {
     const cohorts = state.crossYearData[qid];
     const empty = { filename: `${qid}${programSuffix}`, sheetName, headers: [], rows: [] };
@@ -40,10 +116,7 @@ function buildCohortExport(state, qid, sheetName, programSuffix) {
     const selected = cohortPrograms(state, cohorts);
     if (selected.length === 0) return empty;
 
-    // En vue année, on n'exporte que l'année consultée ; en comparatif, toute la série.
-    const years = state.currentView === 'year'
-        ? cohorts.years.filter((y) => y === String(state.currentYear))
-        : cohorts.years;
+    const years = cohorts.years;
     if (years.length === 0) return empty;
 
     const detailed = selected.length > 1;
@@ -75,8 +148,7 @@ function buildCohortExport(state, qid, sheetName, programSuffix) {
         return row;
     });
 
-    const yearSuffix = state.currentView === 'year' ? `-${state.currentYear}` : '';
-    return { filename: `${qid}${yearSuffix}${programSuffix}`, sheetName, headers, rows };
+    return { filename: `${qid}${programSuffix}`, sheetName, headers, rows };
 }
 
 function buildMultiChoiceCompareExport(state, qid, sheetName, programSuffix) {

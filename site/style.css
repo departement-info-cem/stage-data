@@ -56,6 +56,12 @@ body {
     font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* L'en-tête se compacte au scroll et son gabarit rétrécit d'autant. L'ancrage
+       du navigateur voudrait compenser ce mouvement en reculant le scroll, ce qui
+       rouvre l'en-tête, qui recompacte… : la page oscillait sans fin dès les
+       premiers pixels. Les hauteurs ici sont connues d'avance, l'ancrage n'a rien
+       à rattraper. */
+    overflow-anchor: none;
 }
 
 code, pre, .mono {
