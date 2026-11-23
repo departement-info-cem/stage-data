@@ -85,7 +85,8 @@ code, pre, .mono {
     will-change: transform;
 }
 
-.site-header-spacer {
+.site-header-spacer,
+.site-header-offset {
     width: 100%;
     flex-shrink: 0;
 }

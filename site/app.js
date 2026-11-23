@@ -162,37 +162,69 @@ class DataVisualizationApp {
             const spacer = document.createElement('div');
             spacer.className = 'site-header-spacer';
             spacer.setAttribute('aria-hidden', 'true');
-            spacer.style.height = `${header.offsetHeight}px`;
             header.insertAdjacentElement('afterend', spacer);
 
+            // L'en-tête est fixe : le gabarit lui réserve sa hauteur en haut de page.
+            // Ce contrepoids rend en bas ce que le compactage retire en haut, pour que
+            // la hauteur de la page ne dépende pas de l'état de l'en-tête. Sans lui,
+            // compacter raccourcit la page de ~175 px ; quand la page ne dépasse la
+            // fenêtre que de quelques pixels, sa plage de défilement disparaît, le
+            // navigateur ramène le scroll à zéro, l'en-tête se rouvre — et la page fait
+            // le yoyo tant qu'on pousse la molette.
+            const contrepoids = document.createElement('div');
+            contrepoids.className = 'site-header-offset';
+            contrepoids.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(contrepoids);
+
+            let hauteurEtendue = header.offsetHeight;
+            const mesurerEnTete = () => {
+                const hauteur = header.offsetHeight;
+                if (!header.classList.contains('is-compact')) hauteurEtendue = hauteur;
+                spacer.style.height = `${hauteur}px`;
+                contrepoids.style.height = `${Math.max(0, hauteurEtendue - hauteur)}px`;
+            };
+            mesurerEnTete();
+
             if ('ResizeObserver' in window) {
-                const ro = new ResizeObserver(() => {
-                    spacer.style.height = `${header.offsetHeight}px`;
-                });
+                const ro = new ResizeObserver(mesurerEnTete);
                 ro.observe(header);
             }
 
             const COMPACT_ENTER = 12;
             const COMPACT_EXIT = 2;
+            // Une page qui défile à peine n'a rien à gagner à compacter son en-tête ;
+            // les deux seuils évitent de basculer sans fin autour de la limite.
+            const DEFILEMENT_POUR_COMPACTER = 320;
+            const DEFILEMENT_POUR_GARDER = 260;
+            const defilementDisponible = () => (
+                document.documentElement.scrollHeight - window.innerHeight
+            );
+
             let isCompact = false;
             let ticking = false;
             const updateHeader = () => {
                 const y = window.scrollY;
-                if (!isCompact && y > COMPACT_ENTER) {
+                const plage = defilementDisponible();
+                if (!isCompact && y > COMPACT_ENTER && plage >= DEFILEMENT_POUR_COMPACTER) {
                     isCompact = true;
                     header.classList.add('is-compact');
-                } else if (isCompact && y < COMPACT_EXIT) {
+                } else if (isCompact && (y < COMPACT_EXIT || plage < DEFILEMENT_POUR_GARDER)) {
                     isCompact = false;
                     header.classList.remove('is-compact');
                 }
                 ticking = false;
             };
-            window.addEventListener('scroll', () => {
+            const planifierMaj = () => {
                 if (!ticking) {
                     window.requestAnimationFrame(updateHeader);
                     ticking = true;
                 }
-            }, { passive: true });
+            };
+            window.addEventListener('scroll', planifierMaj, { passive: true });
+            // Changer de vue ou de fenêtre change la hauteur de la page, donc la
+            // réponse à « cette page a-t-elle de quoi défiler ? ».
+            window.addEventListener('resize', planifierMaj, { passive: true });
+            this.refreshHeader = planifierMaj;
             updateHeader();
         }
 
@@ -227,6 +259,7 @@ class DataVisualizationApp {
         }
         if (window.lucide) window.lucide.createIcons();
         this.observeChartReveal();
+        if (this.refreshHeader) this.refreshHeader();
     }
 
     destroyCharts() {
