@@ -1,3 +1,5 @@
+import { PLACEMENT_MONTHS } from './constants.js';
+
 export function normalize(value, aliasLookup) {
     return aliasLookup.get(value.toLowerCase()) || value;
 }
@@ -172,13 +174,33 @@ export function aggregateCohorts(rows) {
             byYear.set(year, entry);
         }
         if (String(row.previsionnel || '').trim()) entry.forecast = true;
+
+        // Stages obtenus mois par mois, plus ceux dont on ne connaît pas le mois
+        // (cohortes antérieures au suivi mensuel). Le total placé s'en déduit.
+        const mensuel = PLACEMENT_MONTHS.map((m) => parseCount(row[m.key]));
+        const moisInconnu = parseCount(row.mois_inconnu);
+        // Saison terminée : ou bien tous les mois sont renseignés, ou bien le total
+        // est connu sans son détail. Sinon le placement est encore en cours.
+        const complet = moisInconnu != null || mensuel.every((v) => v != null);
+        const obtenus = mensuel.reduce((acc, v) => acc + (v || 0), 0) + (moisInconnu || 0);
+
         entry.byProgram.set(program, {
             finissants: parseCount(row.finissants),
-            places: parseCount(row.places),
+            mensuel,
+            moisInconnu,
+            complet,
+            places: complet ? obtenus : null,
         });
     }
 
     const years = Array.from(byYear.keys()).sort();
+    const emptyCell = {
+        finissants: null,
+        mensuel: PLACEMENT_MONTHS.map(() => null),
+        moisInconnu: null,
+        complet: false,
+        places: null,
+    };
     const result = {
         years,
         programs,
@@ -188,14 +210,20 @@ export function aggregateCohorts(rows) {
     };
 
     for (const program of programs) {
-        result.byProgram[program] = { finissants: [], places: [] };
+        result.byProgram[program] = {
+            finissants: [], places: [], mensuel: [], moisInconnu: [], complet: [],
+        };
     }
     for (let i = 0; i < years.length; i++) {
         const entry = byYear.get(years[i]);
         for (const program of programs) {
-            const cell = entry.byProgram.get(program) || { finissants: null, places: null };
-            result.byProgram[program].finissants.push(cell.finissants);
-            result.byProgram[program].places.push(cell.places);
+            const cell = entry.byProgram.get(program) || emptyCell;
+            const target = result.byProgram[program];
+            target.finissants.push(cell.finissants);
+            target.places.push(cell.places);
+            target.mensuel.push(cell.mensuel);
+            target.moisInconnu.push(cell.moisInconnu);
+            target.complet.push(cell.complet);
         }
         result.total.finissants.push(sumOrNull(programs.map((p) => result.byProgram[p].finissants[i])));
         result.total.places.push(sumOrNull(programs.map((p) => result.byProgram[p].places[i])));

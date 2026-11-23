@@ -98,6 +98,8 @@ export async function loadCrossYearData({ schema }) {
     const rawRows = {};
     for (const [qid, q] of Object.entries(schema.questions)) {
         if (q.scope !== 'cross-year') continue;
+        // Une question dérivée relit les données d'une autre : rien à charger.
+        if (q.derivedFrom) continue;
         try {
             const { aggregated, rows } = await loadCrossYearCSV(qid, q);
             data[qid] = aggregated;

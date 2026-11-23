@@ -1,18 +1,21 @@
-import { PROGRAM_ALL } from './constants.js';
+import { PLACEMENT_MONTHS, PROGRAM_ALL } from './constants.js';
 import { assignColors } from './colors.js';
 import {
     createAverageDisplay,
     createBarChart,
     createCohortChart,
     createLineChart,
-    createPlacementBarChart,
+    createPlacementPaceChart,
+    createPlacementProgressChart,
     createPieChart,
     createSankeyChart,
 } from './charts.js';
 import {
+    cohortPaceSeries,
     cohortPrograms,
     cohortTotalsAt,
-    cohortYearTotals,
+    cohortYearProgress,
+    crossYearDataFor,
     compareYearsForQuestion,
     crossYearQuestions,
     getData,
@@ -91,10 +94,34 @@ function cohortNote(state, q, cohorts) {
             parts.push(`${liste} : chiffres prévisionnels, tracés en pointillés, dont le placement n'est pas encore connu.`);
         }
     } else {
-        const totals = cohortYearTotals(state, cohorts, state.currentYear);
-        if (totals && totals.forecast) {
-            parts.push(`H${state.currentYear} : chiffres prévisionnels.`);
+        const progress = cohortYearProgress(state, cohorts, state.currentYear);
+        if (!progress) return parts.join(' ');
+        if (progress.forecast) {
+            parts.push(`H${state.currentYear} : nombre de finissants prévisionnel.`);
         }
+        if (progress.undetermined) {
+            parts.push("Le détail du placement mois par mois n'est pas disponible pour cette cohorte : seul le total de mars est une donnée réelle, la montée qui y conduit n'est qu'une ligne droite.");
+        } else if (!progress.complete) {
+            const mois = progress.lastKnownIndex >= 0
+                ? PLACEMENT_MONTHS[progress.lastKnownIndex].label.toLowerCase()
+                : null;
+            parts.push(mois
+                ? `Saison de placement en cours : le suivi s'arrête à ${mois}.`
+                : "Saison de placement pas encore commencée.");
+        }
+    }
+    return parts.join(' ');
+}
+
+function cohortPaceNote(state, q, series) {
+    const parts = q.note ? [q.note] : [];
+    const interpolees = series.filter((s) => s.interpolated).map((s) => `H${s.year}`);
+    if (interpolees.length > 0) {
+        parts.push(`${interpolees.join(', ')} : sans détail mensuel, tracées en pointillés — la montée y est interpolée entre zéro et le total de mars.`);
+    }
+    const enCours = series.filter((s) => !s.complete).map((s) => `H${s.year}`);
+    if (enCours.length > 0) {
+        parts.push(`${enCours.join(', ')} : saison en cours.`);
     }
     return parts.join(' ');
 }
@@ -104,12 +131,26 @@ function renderCohortSection(state, charts, container) {
     const wrappers = [];
 
     for (const { qid, q } of crossYearQuestions(state)) {
-        const cohorts = state.crossYearData[qid];
+        const cohorts = crossYearDataFor(state, qid);
         if (!cohorts || cohorts.years.length === 0) continue;
         const canvasId = `chart-${qid}`;
         let render;
+        let note = null;
 
-        if (isCompare) {
+        if (q.chartType === 'cohortes-rythme') {
+            // Comparer un rythme suppose au moins deux cohortes à mettre en regard.
+            if (!isCompare) continue;
+            const series = cohortPaceSeries(state, cohorts);
+            if (series.length < 2) continue;
+            note = cohortPaceNote(state, q, series);
+            render = () => {
+                const chart = createPlacementPaceChart(canvasId, {
+                    months: PLACEMENT_MONTHS.map((m) => m.label),
+                    series,
+                });
+                if (chart) charts.set(canvasId, chart);
+            };
+        } else if (isCompare) {
             const chartData = buildCohortChartData(state, cohorts);
             if (!chartData) continue;
             render = () => {
@@ -117,20 +158,32 @@ function renderCohortSection(state, charts, container) {
                 if (chart) charts.set(canvasId, chart);
             };
         } else {
-            const totals = cohortYearTotals(state, cohorts, state.currentYear);
-            if (!totals) continue;
+            const progress = cohortYearProgress(state, cohorts, state.currentYear);
+            if (!progress) continue;
             render = () => {
-                const chart = createPlacementBarChart(canvasId, {
-                    label: `H${state.currentYear}`,
-                    color: programColor(state, state.currentProgram),
-                    ...totals,
+                const chart = createPlacementProgressChart(canvasId, {
+                    months: PLACEMENT_MONTHS.map((m) => m.label),
+                    areas: progress.series.map((s) => ({
+                        label: programLabel(state, s.program),
+                        color: programColor(state, s.program),
+                        cumul: s.cumul,
+                        mensuel: s.mensuel,
+                    })),
+                    totals: progress.totals,
+                    finissants: progress.finissants,
+                    finissantsLabel: `Finissants (${progress.finissants})`,
+                    undetermined: progress.undetermined,
+                    forecast: progress.forecast,
                 });
                 if (chart) charts.set(canvasId, chart);
             };
         }
 
         wrappers.push({
-            wrapper: createWrapper(qid, q.label, { wide: true, note: cohortNote(state, q, cohorts) }),
+            wrapper: createWrapper(qid, q.label, {
+                wide: true,
+                note: note != null ? note : cohortNote(state, q, cohorts),
+            }),
             render,
         });
     }
